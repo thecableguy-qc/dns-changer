@@ -1,7 +1,8 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'l10n/app_localizations.dart';
 
 void main() {
@@ -45,12 +46,43 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _dns1Controller = TextEditingController(text: '8.8.8.8');
   final TextEditingController _dns2Controller = TextEditingController(text: '8.8.4.4');
   bool _isVpnActive = false;
+  String _appVersion = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAppVersion();
+  }
 
   @override
   void dispose() {
     _dns1Controller.dispose();
     _dns2Controller.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadAppVersion() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      setState(() {
+        _appVersion = '${packageInfo.version}+${packageInfo.buildNumber}';
+      });
+    } catch (e) {
+      setState(() {
+        _appVersion = '1.0.0+1'; // Fallback version
+      });
+    }
+  }
+
+  Future<void> _launchUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not launch $url')),
+        );
+      }
+    }
   }
 
   Future<void> _startVpn() async {
@@ -272,6 +304,135 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
 
+                  // Contact Information and Version
+                  SizedBox(height: isTV ? 20 : (isCompact ? 8 : 12)),
+
+                  Container(
+                    padding: EdgeInsets.all(isTV ? 16 : (isCompact ? 8 : 12)),
+                    decoration: BoxDecoration(
+                      color: isTV ? Colors.grey.shade900 : Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(isTV ? 12 : 8),
+                      border: Border.all(
+                        color: isTV ? Colors.grey.shade700 : Colors.grey.shade300,
+                        width: 1,
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        // App Version
+                        Text(
+                          'Version $_appVersion',
+                          style: TextStyle(
+                            fontSize: isTV ? 12 : (isCompact ? 10 : 11),
+                            color: isTV ? Colors.white70 : Colors.grey.shade600,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        SizedBox(height: isTV ? 12 : (isCompact ? 6 : 8)),
+
+                        // Contact Information
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            // Left Logo
+                            Container(
+                              width: isTV ? 32 : (isCompact ? 20 : 24),
+                              height: isTV ? 32 : (isCompact ? 20 : 24),
+                              child: Image.asset(
+                                'assets/images/TheCableGuy-Logo-DNS.png',
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+
+                            SizedBox(width: isTV ? 12 : (isCompact ? 6 : 8)),
+
+                            // Facebook Link
+                            GestureDetector(
+                              onTap: () => _launchUrl('https://www.facebook.com/share/169oPW4Sxq/'),
+                              child: Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: isTV ? 12 : (isCompact ? 8 : 10),
+                                  vertical: isTV ? 8 : (isCompact ? 4 : 6),
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Color(0xFF1877F2), // Facebook blue
+                                  borderRadius: BorderRadius.circular(isTV ? 8 : 6),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.facebook,
+                                      color: Colors.white,
+                                      size: isTV ? 18 : (isCompact ? 14 : 16),
+                                    ),
+                                    SizedBox(width: isTV ? 8 : (isCompact ? 4 : 6)),
+                                    Text(
+                                      'Facebook',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: isTV ? 12 : (isCompact ? 10 : 11),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+
+                            SizedBox(width: isTV ? 16 : (isCompact ? 8 : 12)),
+
+                            // Email Link
+                            GestureDetector(
+                              onTap: () => _launchUrl('mailto:alex.parent.qc@gmail.com'),
+                              child: Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: isTV ? 12 : (isCompact ? 8 : 10),
+                                  vertical: isTV ? 8 : (isCompact ? 4 : 6),
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Color(0xFF34495E), // Dark gray for email
+                                  borderRadius: BorderRadius.circular(isTV ? 8 : 6),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.email,
+                                      color: Colors.white,
+                                      size: isTV ? 18 : (isCompact ? 14 : 16),
+                                    ),
+                                    SizedBox(width: isTV ? 8 : (isCompact ? 4 : 6)),
+                                    Text(
+                                      'Contact',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: isTV ? 12 : (isCompact ? 10 : 11),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+
+                            SizedBox(width: isTV ? 12 : (isCompact ? 6 : 8)),
+
+                            // Right Logo
+                            Container(
+                              width: isTV ? 32 : (isCompact ? 20 : 24),
+                              height: isTV ? 32 : (isCompact ? 20 : 24),
+                              child: Image.asset(
+                                'assets/images/TheCableGuy-Logo-DNS.png',
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
                   // Minimal bottom padding
                   SizedBox(height: isCompact ? 4 : 8),
                 ],
@@ -339,7 +500,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ],
     );
   }
-
 
   Widget _buildPresetButtonWithLogo(String name, String dns1, String dns2, Widget Function(bool isTV, bool isCompact) logoBuilder, bool isTV, [bool isCompact = false]) {
     return ElevatedButton(
@@ -420,9 +580,7 @@ class _HomeScreenState extends State<HomeScreen> {
               height: size * 0.6,
               child: CircularProgressIndicator(
                 strokeWidth: 1,
-                value: loadingProgress.expectedTotalBytes != null
-                    ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                    : null,
+                value: loadingProgress.expectedTotalBytes != null ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes! : null,
               ),
             );
           },
@@ -474,9 +632,7 @@ class _HomeScreenState extends State<HomeScreen> {
               height: size * 0.6,
               child: CircularProgressIndicator(
                 strokeWidth: 1,
-                value: loadingProgress.expectedTotalBytes != null
-                    ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                    : null,
+                value: loadingProgress.expectedTotalBytes != null ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes! : null,
               ),
             );
           },
@@ -537,9 +693,7 @@ class _HomeScreenState extends State<HomeScreen> {
               height: size * 0.6,
               child: CircularProgressIndicator(
                 strokeWidth: 1,
-                value: loadingProgress.expectedTotalBytes != null
-                    ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                    : null,
+                value: loadingProgress.expectedTotalBytes != null ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes! : null,
               ),
             );
           },
@@ -597,9 +751,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     height: size * 0.6,
                     child: CircularProgressIndicator(
                       strokeWidth: 1,
-                      value: loadingProgress.expectedTotalBytes != null
-                          ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                          : null,
+                      value: loadingProgress.expectedTotalBytes != null ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes! : null,
                     ),
                   );
                 },
@@ -659,13 +811,45 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
             child: Center(
-              child: Text(
-                '9',
-                style: TextStyle(
-                  fontSize: size * 0.5,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
+              child: Image.network(
+                'https://www.quad9.net/favicon.ico',
+                width: size * 0.8,
+                height: size * 0.8,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    width: size * 0.8,
+                    height: size * 0.8,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        '9',
+                        style: TextStyle(
+                          fontSize: size * 0.5,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return SizedBox(
+                    width: size * 0.6,
+                    height: size * 0.6,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 1,
+                      value: loadingProgress.expectedTotalBytes != null ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes! : null,
+                    ),
+                  );
+                },
               ),
             ),
           ),
@@ -695,5 +879,3 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
-
-
