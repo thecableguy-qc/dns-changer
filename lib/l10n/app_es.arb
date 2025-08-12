@@ -9,7 +9,9 @@
   "stop": "Detener",
   "google": "Google",
   "cloudflare": "Cloudflare",
+  "cloudflareBlocking": "Cloudflare + Bloqueador",
   "quad9": "Quad9",
+  "quad9Blocking": "Quad9 + Bloqueador",
   "failedToStartVpn": "Error al iniciar VPN: {error}",
   "failedToStopVpn": "Error al detener VPN: {error}"
 }

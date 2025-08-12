@@ -39,7 +39,13 @@ class AppLocalizationsEs extends AppLocalizations {
   String get cloudflare => 'Cloudflare';
 
   @override
+  String get cloudflareBlocking => 'Cloudflare + Bloqueador';
+
+  @override
   String get quad9 => 'Quad9';
+
+  @override
+  String get quad9Blocking => 'Quad9 + Bloqueador';
 
   @override
   String failedToStartVpn(String error) {

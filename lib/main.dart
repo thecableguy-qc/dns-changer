@@ -230,20 +230,43 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     SizedBox(height: isTV ? 8 : (isCompact ? 4 : 6)),
 
-                    // Preset buttons in a single horizontal row
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    // Preset buttons in a 2x3 grid (2 rows, 3 columns)
+                    Column(
                       children: [
-                        Expanded(
-                          child: _buildPresetButtonWithLogo(AppLocalizations.of(context)!.google, "8.8.8.8", "8.8.4.4", _buildGoogleLogo, isTV, isCompact),
+                        // First row
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            Expanded(
+                              child: _buildPresetButtonWithLogo(AppLocalizations.of(context)!.google, "8.8.8.8", "8.8.4.4", _buildGoogleLogo, isTV, isCompact),
+                            ),
+                            SizedBox(width: isTV ? 8 : (isCompact ? 4 : 6)),
+                            Expanded(
+                              child: _buildPresetButtonWithLogo(AppLocalizations.of(context)!.cloudflare, "1.1.1.1", "1.0.0.1", _buildCloudflareLogo, isTV, isCompact),
+                            ),
+                            SizedBox(width: isTV ? 8 : (isCompact ? 4 : 6)),
+                            Expanded(
+                              child: _buildPresetButtonWithLogo(AppLocalizations.of(context)!.quad9, "9.9.9.10", "149.112.112.10", _buildQuad9Logo, isTV, isCompact),
+                            ),
+                          ],
                         ),
-                        SizedBox(width: isTV ? 8 : (isCompact ? 4 : 6)),
-                        Expanded(
-                          child: _buildPresetButtonWithLogo(AppLocalizations.of(context)!.cloudflare, "1.1.1.1", "1.0.0.1", _buildCloudflareLogo, isTV, isCompact),
-                        ),
-                        SizedBox(width: isTV ? 8 : (isCompact ? 4 : 6)),
-                        Expanded(
-                          child: _buildPresetButtonWithLogo(AppLocalizations.of(context)!.quad9, "9.9.9.9", "149.112.112.112", _buildQuad9Logo, isTV, isCompact),
+                        SizedBox(height: isTV ? 8 : (isCompact ? 4 : 6)),
+                        // Second row with ad-blocking presets
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            Expanded(
+                              child: Container(), // Empty space for alignment
+                            ),
+                            SizedBox(width: isTV ? 8 : (isCompact ? 4 : 6)),
+                            Expanded(
+                              child: _buildPresetButtonWithLogo(AppLocalizations.of(context)!.cloudflareBlocking, "1.1.1.2", "1.0.0.2", _buildCloudflareBlockingLogo, isTV, isCompact),
+                            ),
+                            SizedBox(width: isTV ? 8 : (isCompact ? 4 : 6)),
+                            Expanded(
+                              child: _buildPresetButtonWithLogo(AppLocalizations.of(context)!.quad9Blocking, "9.9.9.9", "149.112.112.112", _buildQuad9BlockingLogo, isTV, isCompact),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -521,6 +544,153 @@ class _HomeScreenState extends State<HomeScreen> {
             );
           },
         ),
+      ),
+    );
+  }
+
+  Widget _buildCloudflareBlockingLogo(bool isTV, bool isCompact) {
+    double size = isTV ? 24 : (isCompact ? 16 : 18);
+    return Container(
+      width: size,
+      height: size,
+      child: Stack(
+        children: [
+          // Base Cloudflare logo container
+          Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.2),
+                  spreadRadius: 1,
+                  blurRadius: 2,
+                ),
+              ],
+            ),
+            child: Center(
+              child: Image.network(
+                'https://www.cloudflare.com/favicon.ico',
+                width: size * 0.8,
+                height: size * 0.8,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    width: size * 0.7,
+                    height: size * 0.7,
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF38020), // Cloudflare orange
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.cloud,
+                      size: size * 0.5,
+                      color: Colors.white,
+                    ),
+                  );
+                },
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return SizedBox(
+                    width: size * 0.6,
+                    height: size * 0.6,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 1,
+                      value: loadingProgress.expectedTotalBytes != null
+                          ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                          : null,
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+          // Red shield overlay in bottom right to indicate blocking
+          Positioned(
+            bottom: 0,
+            right: 0,
+            child: Container(
+              width: size * 0.4,
+              height: size * 0.4,
+              decoration: BoxDecoration(
+                color: Color(0xFFE74C3C), // Red for blocking
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 1),
+              ),
+              child: Center(
+                child: Icon(
+                  Icons.block,
+                  size: size * 0.2,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuad9BlockingLogo(bool isTV, bool isCompact) {
+    double size = isTV ? 24 : (isCompact ? 16 : 18);
+    return Container(
+      width: size,
+      height: size,
+      child: Stack(
+        children: [
+          // Base Quad9 logo (using similar style but different colors)
+          Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF1E3A8A), Color(0xFF3730A3)], // Blue gradient for Quad9
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.2),
+                  spreadRadius: 1,
+                  blurRadius: 2,
+                ),
+              ],
+            ),
+            child: Center(
+              child: Text(
+                '9',
+                style: TextStyle(
+                  fontSize: size * 0.5,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+          // Red shield overlay in bottom right to indicate blocking
+          Positioned(
+            bottom: 0,
+            right: 0,
+            child: Container(
+              width: size * 0.4,
+              height: size * 0.4,
+              decoration: BoxDecoration(
+                color: Color(0xFFE74C3C), // Red for blocking
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 1),
+              ),
+              child: Center(
+                child: Icon(
+                  Icons.block,
+                  size: size * 0.2,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

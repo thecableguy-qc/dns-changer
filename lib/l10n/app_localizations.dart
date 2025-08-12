@@ -160,11 +160,23 @@ abstract class AppLocalizations {
   /// **'Cloudflare'**
   String get cloudflare;
 
+  /// Cloudflare DNS with ad blocking preset button
+  ///
+  /// In en, this message translates to:
+  /// **'Cloudflare + Blocker'**
+  String get cloudflareBlocking;
+
   /// Quad9 DNS preset button
   ///
   /// In en, this message translates to:
   /// **'Quad9'**
   String get quad9;
+
+  /// Quad9 DNS with ad blocking preset button
+  ///
+  /// In en, this message translates to:
+  /// **'Quad9 + Blocker'**
+  String get quad9Blocking;
 
   /// Error message when VPN fails to start
   ///

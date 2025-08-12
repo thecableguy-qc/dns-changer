@@ -39,9 +39,17 @@
   "@cloudflare": {
     "description": "Cloudflare DNS preset button"
   },
+  "cloudflareBlocking": "Cloudflare + Blocker",
+  "@cloudflareBlocking": {
+    "description": "Cloudflare DNS with ad blocking preset button"
+  },
   "quad9": "Quad9",
   "@quad9": {
     "description": "Quad9 DNS preset button"
+  },
+  "quad9Blocking": "Quad9 + Blocker",
+  "@quad9Blocking": {
+    "description": "Quad9 DNS with ad blocking preset button"
   },
   "failedToStartVpn": "Failed to start VPN: {error}",
   "@failedToStartVpn": {

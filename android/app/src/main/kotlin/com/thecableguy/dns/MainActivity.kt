@@ -18,7 +18,7 @@ class MainActivity: FlutterActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        
+
         if (requestCode == VPN_REQUEST_CODE) {
             Log.i(TAG, "VPN permission result: requestCode=$requestCode, resultCode=$resultCode")
             if (resultCode == Activity.RESULT_OK) {
