@@ -1,6 +1,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'l10n/app_localizations.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,6 +17,17 @@ class MyApp extends StatelessWidget {
       title: 'TheCableGuy DNS',
       theme: ThemeData(primarySwatch: Colors.blue),
       home: const HomeScreen(),
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en'), // English
+        Locale('fr'), // French
+        Locale('es'), // Spanish
+      ],
     );
   }
 }
@@ -57,7 +70,7 @@ class _HomeScreenState extends State<HomeScreen> {
       debugPrint("Flutter: Failed to start VPN: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Failed to start VPN: $e")),
+          SnackBar(content: Text(AppLocalizations.of(context)!.failedToStartVpn(e.toString()))),
         );
       }
     }
@@ -75,7 +88,7 @@ class _HomeScreenState extends State<HomeScreen> {
       debugPrint("Flutter: Failed to stop VPN: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Failed to stop VPN: $e")),
+          SnackBar(content: Text(AppLocalizations.of(context)!.failedToStopVpn(e.toString()))),
         );
       }
     }
@@ -91,7 +104,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("TheCableGuy DNS"),
+        title: Text(AppLocalizations.of(context)!.appTitle),
         centerTitle: true,
         backgroundColor: isTV ? Colors.black87 : null,
         toolbarHeight: isCompact ? 40 : 48, // Even smaller app bar
@@ -133,7 +146,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         SizedBox(width: isTV ? 12 : (isCompact ? 4 : 6)),
                         Text(
-                          _isVpnActive ? "VPN Active" : "VPN Inactive",
+                          _isVpnActive ? AppLocalizations.of(context)!.vpnActive : AppLocalizations.of(context)!.vpnInactive,
                           style: TextStyle(
                             fontSize: isTV ? 18 : (isCompact ? 12 : 14),
                             fontWeight: FontWeight.bold,
@@ -152,7 +165,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Expanded(
                         child: _buildDnsInputField(
                           controller: _dns1Controller,
-                          label: "Primary",
+                          label: AppLocalizations.of(context)!.primary,
                           hint: "8.8.8.8",
                           enabled: !_isVpnActive,
                           isTV: isTV,
@@ -163,7 +176,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Expanded(
                         child: _buildDnsInputField(
                           controller: _dns2Controller,
-                          label: "Secondary",
+                          label: AppLocalizations.of(context)!.secondary,
                           hint: "8.8.4.4",
                           enabled: !_isVpnActive,
                           isTV: isTV,
@@ -177,7 +190,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   // DNS Presets - smaller text and more compact grid
                   Text(
-                    "Presets",
+                    AppLocalizations.of(context)!.presets,
                     style: TextStyle(
                       fontSize: isTV ? 16 : (isCompact ? 12 : 14),
                       fontWeight: FontWeight.bold,
@@ -186,20 +199,20 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   SizedBox(height: isTV ? 8 : (isCompact ? 4 : 6)),
 
-                  // Preset buttons in a single horizontal row
+                  // Preset buttons in a single horizontal row - disabled when VPN is active
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       Expanded(
-                        child: _buildPresetButtonWithLogo("Google", "8.8.8.8", "8.8.4.4", _buildGoogleLogo, isTV, isCompact),
+                        child: _buildPresetButtonWithLogo(AppLocalizations.of(context)!.google, "8.8.8.8", "8.8.4.4", _buildGoogleLogo, isTV, isCompact),
                       ),
                       SizedBox(width: isTV ? 8 : (isCompact ? 4 : 6)),
                       Expanded(
-                        child: _buildPresetButtonWithLogo("Cloudflare", "1.1.1.1", "1.0.0.1", _buildCloudflareLogo, isTV, isCompact),
+                        child: _buildPresetButtonWithLogo(AppLocalizations.of(context)!.cloudflare, "1.1.1.1", "1.0.0.1", _buildCloudflareLogo, isTV, isCompact),
                       ),
                       SizedBox(width: isTV ? 8 : (isCompact ? 4 : 6)),
                       Expanded(
-                        child: _buildPresetButtonWithLogo("Quad9", "9.9.9.9", "149.112.112.112", _buildQuad9Logo, isTV, isCompact),
+                        child: _buildPresetButtonWithLogo(AppLocalizations.of(context)!.quad9, "9.9.9.9", "149.112.112.112", _buildQuad9Logo, isTV, isCompact),
                       ),
                     ],
                   ),
@@ -213,7 +226,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       _buildVpnButton(
                         onPressed: _isVpnActive ? null : _startVpn,
                         icon: Icons.play_arrow,
-                        label: "Start",
+                        label: AppLocalizations.of(context)!.start,
                         color: Colors.green,
                         isTV: isTV,
                         isCompact: isCompact,
@@ -222,7 +235,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       _buildVpnButton(
                         onPressed: _isVpnActive ? _stopVpn : null,
                         icon: Icons.stop,
-                        label: "Stop",
+                        label: AppLocalizations.of(context)!.stop,
                         color: Colors.red,
                         isTV: isTV,
                         isCompact: isCompact,
@@ -339,7 +352,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildPresetButtonWithLogo(String name, String dns1, String dns2, Widget Function(bool isTV, bool isCompact) logoBuilder, bool isTV, [bool isCompact = false]) {
     return ElevatedButton(
-      onPressed: _isVpnActive ? null : () {
+      onPressed: () {
         setState(() {
           _dns1Controller.text = dns1;
           _dns2Controller.text = dns2;

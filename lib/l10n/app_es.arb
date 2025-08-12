@@ -1,0 +1,15 @@
+{
+  "appTitle": "TheCableGuy DNS",
+  "vpnActive": "VPN Activo",
+  "vpnInactive": "VPN Inactivo",
+  "primary": "Primario",
+  "secondary": "Secundario",
+  "presets": "Predefinidos",
+  "start": "Iniciar",
+  "stop": "Detener",
+  "google": "Google",
+  "cloudflare": "Cloudflare",
+  "quad9": "Quad9",
+  "failedToStartVpn": "Error al iniciar VPN: {error}",
+  "failedToStopVpn": "Error al detener VPN: {error}"
+}

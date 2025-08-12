@@ -1,0 +1,66 @@
+{
+  "appTitle": "TheCableGuy DNS",
+  "@appTitle": {
+    "description": "The title of the application"
+  },
+  "vpnActive": "VPN Active",
+  "@vpnActive": {
+    "description": "Status text when VPN is active"
+  },
+  "vpnInactive": "VPN Inactive",
+  "@vpnInactive": {
+    "description": "Status text when VPN is inactive"
+  },
+  "primary": "Primary",
+  "@primary": {
+    "description": "Label for primary DNS field"
+  },
+  "secondary": "Secondary",
+  "@secondary": {
+    "description": "Label for secondary DNS field"
+  },
+  "presets": "Presets",
+  "@presets": {
+    "description": "Label for DNS presets section"
+  },
+  "start": "Start",
+  "@start": {
+    "description": "Start button label"
+  },
+  "stop": "Stop",
+  "@stop": {
+    "description": "Stop button label"
+  },
+  "google": "Google",
+  "@google": {
+    "description": "Google DNS preset button"
+  },
+  "cloudflare": "Cloudflare",
+  "@cloudflare": {
+    "description": "Cloudflare DNS preset button"
+  },
+  "quad9": "Quad9",
+  "@quad9": {
+    "description": "Quad9 DNS preset button"
+  },
+  "failedToStartVpn": "Failed to start VPN: {error}",
+  "@failedToStartVpn": {
+    "description": "Error message when VPN fails to start",
+    "placeholders": {
+      "error": {
+        "type": "String",
+        "description": "The error message"
+      }
+    }
+  },
+  "failedToStopVpn": "Failed to stop VPN: {error}",
+  "@failedToStopVpn": {
+    "description": "Error message when VPN fails to stop",
+    "placeholders": {
+      "error": {
+        "type": "String",
+        "description": "The error message"
+      }
+    }
+  }
+}
