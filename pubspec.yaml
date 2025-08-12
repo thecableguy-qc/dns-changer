@@ -1,6 +1,6 @@
 
-name: dns_vpn_demo
-description: A Flutter VPN DNS changer demo using Android VpnService
+name: thecableguy_dns
+description: A Flutter VPN DNS changer by TheCableGuy using Android VpnService
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -10,6 +10,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  font_awesome_flutter: ^10.7.0
 
 dev_dependencies:
   flutter_test:

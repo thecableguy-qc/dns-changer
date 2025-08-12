@@ -1,4 +1,4 @@
-package com.example.dns_vpn_demo
+package com.thecableguy.dns
 
 import android.content.Intent
 import android.net.VpnService

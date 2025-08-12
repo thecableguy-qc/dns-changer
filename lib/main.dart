@@ -12,7 +12,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'DNS VPN Demo',
+      title: 'TheCableGuy DNS',
       theme: ThemeData(primarySwatch: Colors.blue),
       home: const HomeScreen(),
     );
@@ -86,16 +86,19 @@ class _HomeScreenState extends State<HomeScreen> {
     // Detect if running on TV by checking screen size and orientation
     final mediaQuery = MediaQuery.of(context);
     final isTV = mediaQuery.size.width > 1000 || mediaQuery.size.aspectRatio > 1.5;
+    final screenHeight = mediaQuery.size.height;
+    final isCompact = screenHeight < 800; // More aggressive compact detection
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("DNS VPN Demo"),
+        title: const Text("TheCableGuy DNS"),
         centerTitle: true,
         backgroundColor: isTV ? Colors.black87 : null,
+        toolbarHeight: isCompact ? 40 : 48, // Even smaller app bar
       ),
       backgroundColor: isTV ? Colors.black : null,
       body: Container(
-        padding: EdgeInsets.all(isTV ? 32.0 : 16.0),
+        padding: EdgeInsets.all(isTV ? 20.0 : (isCompact ? 4.0 : 8.0)),
         child: Center(
           child: ConstrainedBox(
             constraints: BoxConstraints(
@@ -103,32 +106,36 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             child: SingleChildScrollView(
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  // VPN Status
+                  // VPN Status - ultra compact
                   Container(
-                    padding: EdgeInsets.all(isTV ? 24 : 16),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isTV ? 16 : (isCompact ? 8 : 12),
+                      vertical: isTV ? 12 : (isCompact ? 4 : 8),
+                    ),
                     decoration: BoxDecoration(
                       color: _isVpnActive ? Colors.green.shade100 : Colors.red.shade100,
-                      borderRadius: BorderRadius.circular(isTV ? 16 : 8),
+                      borderRadius: BorderRadius.circular(isTV ? 10 : 4),
                       border: Border.all(
                         color: _isVpnActive ? Colors.green : Colors.red,
-                        width: isTV ? 3 : 2,
+                        width: 1,
                       ),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
                           _isVpnActive ? Icons.vpn_key : Icons.vpn_key_off,
                           color: _isVpnActive ? Colors.green : Colors.red,
-                          size: isTV ? 48 : 32,
+                          size: isTV ? 28 : (isCompact ? 16 : 20),
                         ),
-                        SizedBox(width: isTV ? 24 : 8),
+                        SizedBox(width: isTV ? 12 : (isCompact ? 4 : 6)),
                         Text(
                           _isVpnActive ? "VPN Active" : "VPN Inactive",
                           style: TextStyle(
-                            fontSize: isTV ? 24 : 18,
+                            fontSize: isTV ? 18 : (isCompact ? 12 : 14),
                             fontWeight: FontWeight.bold,
                             color: _isVpnActive ? Colors.green.shade800 : Colors.red.shade800,
                           ),
@@ -137,102 +144,94 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
 
-                  SizedBox(height: isTV ? 48 : 30),
+                  SizedBox(height: isTV ? 16 : (isCompact ? 6 : 10)),
 
-                  // DNS Configuration Section
+                  // DNS Input Fields in a Row for better space usage
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildDnsInputField(
+                          controller: _dns1Controller,
+                          label: "Primary",
+                          hint: "8.8.8.8",
+                          enabled: !_isVpnActive,
+                          isTV: isTV,
+                          isCompact: isCompact,
+                        ),
+                      ),
+                      SizedBox(width: isTV ? 12 : (isCompact ? 4 : 6)),
+                      Expanded(
+                        child: _buildDnsInputField(
+                          controller: _dns2Controller,
+                          label: "Secondary",
+                          hint: "8.8.4.4",
+                          enabled: !_isVpnActive,
+                          isTV: isTV,
+                          isCompact: isCompact,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  SizedBox(height: isTV ? 16 : (isCompact ? 6 : 10)),
+
+                  // DNS Presets - smaller text and more compact grid
                   Text(
-                    "DNS Configuration",
+                    "Presets",
                     style: TextStyle(
-                      fontSize: isTV ? 28 : 20,
-                      fontWeight: FontWeight.bold,
-                      color: isTV ? Colors.white : Colors.black87,
-                    ),
-                  ),
-
-                  SizedBox(height: isTV ? 32 : 20),
-
-                  // Primary DNS
-                  _buildDnsInputField(
-                    controller: _dns1Controller,
-                    label: "Primary DNS Server",
-                    hint: "e.g., 8.8.8.8",
-                    enabled: !_isVpnActive,
-                    isTV: isTV,
-                  ),
-
-                  SizedBox(height: isTV ? 24 : 16),
-
-                  // Secondary DNS
-                  _buildDnsInputField(
-                    controller: _dns2Controller,
-                    label: "Secondary DNS Server",
-                    hint: "e.g., 8.8.4.4",
-                    enabled: !_isVpnActive,
-                    isTV: isTV,
-                  ),
-
-                  SizedBox(height: isTV ? 48 : 30),
-
-                  // DNS Presets
-                  Text(
-                    "Quick Presets",
-                    style: TextStyle(
-                      fontSize: isTV ? 20 : 16,
+                      fontSize: isTV ? 16 : (isCompact ? 12 : 14),
                       fontWeight: FontWeight.bold,
                       color: isTV ? Colors.white70 : Colors.black87,
                     ),
                   ),
-                  SizedBox(height: isTV ? 20 : 10),
+                  SizedBox(height: isTV ? 8 : (isCompact ? 4 : 6)),
 
-                  // Preset buttons - arranged for TV navigation
-                  isTV ?
-                  Wrap(
-                    spacing: 16,
-                    runSpacing: 16,
-                    children: [
-                      _buildPresetButton("Google DNS", "8.8.8.8", "8.8.4.4", isTV),
-                      _buildPresetButton("Cloudflare", "1.1.1.1", "1.0.0.1", isTV),
-                      _buildPresetButton("OpenDNS", "208.67.222.222", "208.67.220.220", isTV),
-                      _buildPresetButton("Quad9", "9.9.9.9", "149.112.112.112", isTV),
-                    ],
-                  ) :
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        _buildPresetButton("Google DNS", "8.8.8.8", "8.8.4.4", isTV),
-                        const SizedBox(width: 8),
-                        _buildPresetButton("Cloudflare", "1.1.1.1", "1.0.0.1", isTV),
-                        const SizedBox(width: 8),
-                        _buildPresetButton("OpenDNS", "208.67.222.222", "208.67.220.220", isTV),
-                        const SizedBox(width: 8),
-                        _buildPresetButton("Quad9", "9.9.9.9", "149.112.112.112", isTV),
-                      ],
-                    ),
-                  ),
-
-                  SizedBox(height: isTV ? 60 : 30),
-
-                  // VPN Control Buttons
+                  // Preset buttons in a single horizontal row
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Expanded(
+                        child: _buildPresetButtonWithLogo("Google", "8.8.8.8", "8.8.4.4", _buildGoogleLogo, isTV, isCompact),
+                      ),
+                      SizedBox(width: isTV ? 8 : (isCompact ? 4 : 6)),
+                      Expanded(
+                        child: _buildPresetButtonWithLogo("Cloudflare", "1.1.1.1", "1.0.0.1", _buildCloudflareLogo, isTV, isCompact),
+                      ),
+                      SizedBox(width: isTV ? 8 : (isCompact ? 4 : 6)),
+                      Expanded(
+                        child: _buildPresetButtonWithLogo("Quad9", "9.9.9.9", "149.112.112.112", _buildQuad9Logo, isTV, isCompact),
+                      ),
+                    ],
+                  ),
+
+                  SizedBox(height: isTV ? 16 : (isCompact ? 8 : 12)),
+
+                  // VPN Control Buttons - centered below presets
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       _buildVpnButton(
                         onPressed: _isVpnActive ? null : _startVpn,
                         icon: Icons.play_arrow,
-                        label: "Start VPN",
+                        label: "Start",
                         color: Colors.green,
                         isTV: isTV,
+                        isCompact: isCompact,
                       ),
+                      SizedBox(width: isTV ? 20 : (isCompact ? 12 : 16)),
                       _buildVpnButton(
                         onPressed: _isVpnActive ? _stopVpn : null,
                         icon: Icons.stop,
-                        label: "Stop VPN",
+                        label: "Stop",
                         color: Colors.red,
                         isTV: isTV,
+                        isCompact: isCompact,
                       ),
                     ],
                   ),
+
+                  // Minimal bottom padding
+                  SizedBox(height: isCompact ? 4 : 8),
                 ],
               ),
             ),
@@ -248,47 +247,49 @@ class _HomeScreenState extends State<HomeScreen> {
     required String hint,
     required bool enabled,
     required bool isTV,
+    bool isCompact = false,
   }) {
     return TextField(
       controller: controller,
       enabled: enabled,
       style: TextStyle(
-        fontSize: isTV ? 20 : 16,
+        fontSize: isTV ? 16 : (isCompact ? 12 : 14),
         color: isTV ? Colors.white : null,
       ),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
         labelStyle: TextStyle(
-          fontSize: isTV ? 18 : 14,
+          fontSize: isTV ? 14 : (isCompact ? 10 : 12),
           color: isTV ? Colors.white70 : null,
         ),
         hintStyle: TextStyle(
           color: isTV ? Colors.white54 : null,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(isTV ? 16 : 8),
+          borderRadius: BorderRadius.circular(isTV ? 10 : (isCompact ? 4 : 6)),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(isTV ? 16 : 8),
+          borderRadius: BorderRadius.circular(isTV ? 10 : (isCompact ? 4 : 6)),
           borderSide: BorderSide(
             color: isTV ? Colors.white30 : Colors.grey,
-            width: isTV ? 2 : 1,
+            width: 1,
           ),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(isTV ? 16 : 8),
+          borderRadius: BorderRadius.circular(isTV ? 10 : (isCompact ? 4 : 6)),
           borderSide: BorderSide(
             color: isTV ? Colors.blue.shade300 : Colors.blue,
-            width: 3,
+            width: 2,
           ),
         ),
         prefixIcon: Icon(
           Icons.dns,
           color: isTV ? Colors.white54 : null,
-          size: isTV ? 28 : 24,
+          size: isTV ? 20 : (isCompact ? 14 : 16),
         ),
-        contentPadding: EdgeInsets.all(isTV ? 20 : 16),
+        contentPadding: EdgeInsets.all(isTV ? 12 : (isCompact ? 6 : 8)),
+        isDense: true, // Always dense for compact layout
       ),
       keyboardType: TextInputType.number,
       inputFormatters: [
@@ -303,20 +304,21 @@ class _HomeScreenState extends State<HomeScreen> {
     required String label,
     required Color color,
     required bool isTV,
+    bool isCompact = false,
   }) {
     return SizedBox(
-      width: isTV ? 220 : 140,
-      height: isTV ? 70 : 50,
+      width: isTV ? 160 : (isCompact ? 80 : 100),
+      height: isTV ? 50 : (isCompact ? 32 : 40),
       child: ElevatedButton.icon(
         onPressed: onPressed,
         icon: Icon(
           icon,
-          size: isTV ? 32 : 20,
+          size: isTV ? 20 : (isCompact ? 14 : 16),
         ),
         label: Text(
           label,
           style: TextStyle(
-            fontSize: isTV ? 20 : 16,
+            fontSize: isTV ? 16 : (isCompact ? 10 : 12),
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -324,47 +326,223 @@ class _HomeScreenState extends State<HomeScreen> {
           backgroundColor: onPressed != null ? color : Colors.grey,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(isTV ? 20 : 8),
+            borderRadius: BorderRadius.circular(isTV ? 12 : (isCompact ? 4 : 6)),
           ),
           padding: EdgeInsets.symmetric(
-            horizontal: isTV ? 24 : 20,
-            vertical: isTV ? 16 : 12,
+            horizontal: isTV ? 16 : (isCompact ? 4 : 8),
+            vertical: isTV ? 10 : (isCompact ? 4 : 6),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildPresetButton(String name, String dns1, String dns2, bool isTV) {
-    return SizedBox(
-      width: isTV ? 180 : null,
-      height: isTV ? 60 : null,
-      child: ElevatedButton(
-        onPressed: _isVpnActive ? null : () {
-          setState(() {
-            _dns1Controller.text = dns1;
-            _dns2Controller.text = dns2;
-          });
-        },
-        style: ElevatedButton.styleFrom(
-          padding: EdgeInsets.symmetric(
-            horizontal: isTV ? 20 : 12,
-            vertical: isTV ? 16 : 8,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(isTV ? 16 : 8),
-          ),
-          backgroundColor: isTV ? Colors.grey.shade800 : null,
-          foregroundColor: isTV ? Colors.white : null,
+  Widget _buildPresetButtonWithLogo(String name, String dns1, String dns2, Widget Function(bool isTV, bool isCompact) logoBuilder, bool isTV, [bool isCompact = false]) {
+    return ElevatedButton(
+      onPressed: _isVpnActive ? null : () {
+        setState(() {
+          _dns1Controller.text = dns1;
+          _dns2Controller.text = dns2;
+        });
+      },
+      style: ElevatedButton.styleFrom(
+        padding: EdgeInsets.symmetric(
+          horizontal: isTV ? 12 : (isCompact ? 3 : 6),
+          vertical: isTV ? 8 : (isCompact ? 3 : 6),
         ),
-        child: Text(
-          name,
-          style: TextStyle(
-            fontSize: isTV ? 18 : 14,
-            fontWeight: isTV ? FontWeight.w600 : FontWeight.normal,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(isTV ? 8 : (isCompact ? 4 : 6)),
+        ),
+        backgroundColor: isTV ? Colors.grey.shade800 : Colors.white,
+        foregroundColor: isTV ? Colors.white : Colors.black87,
+        minimumSize: Size(0, isCompact ? 28 : 36), // Minimum height
+        elevation: isTV ? 2 : 1,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          logoBuilder(isTV, isCompact),
+          SizedBox(height: isTV ? 4 : (isCompact ? 2 : 3)),
+          Text(
+            name,
+            style: TextStyle(
+              fontSize: isTV ? 12 : (isCompact ? 8 : 9),
+              fontWeight: isTV ? FontWeight.w600 : FontWeight.w500,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGoogleLogo(bool isTV, bool isCompact) {
+    double size = isTV ? 24 : (isCompact ? 16 : 18);
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.2),
+            spreadRadius: 1,
+            blurRadius: 2,
+          ),
+        ],
+      ),
+      child: Center(
+        child: Image.network(
+          'https://www.google.com/favicon.ico',
+          width: size * 0.8,
+          height: size * 0.8,
+          errorBuilder: (context, error, stackTrace) {
+            return Text(
+              'G',
+              style: TextStyle(
+                fontSize: size * 0.6,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF4285F4),
+              ),
+            );
+          },
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return SizedBox(
+              width: size * 0.6,
+              height: size * 0.6,
+              child: CircularProgressIndicator(
+                strokeWidth: 1,
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                    : null,
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCloudflareLogo(bool isTV, bool isCompact) {
+    double size = isTV ? 24 : (isCompact ? 16 : 18);
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.2),
+            spreadRadius: 1,
+            blurRadius: 2,
+          ),
+        ],
+      ),
+      child: Center(
+        child: Image.network(
+          'https://www.cloudflare.com/favicon.ico',
+          width: size * 0.8,
+          height: size * 0.8,
+          errorBuilder: (context, error, stackTrace) {
+            return Container(
+              width: size * 0.7,
+              height: size * 0.7,
+              decoration: BoxDecoration(
+                color: Color(0xFFF38020),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.cloud,
+                size: size * 0.5,
+                color: Colors.white,
+              ),
+            );
+          },
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return SizedBox(
+              width: size * 0.6,
+              height: size * 0.6,
+              child: CircularProgressIndicator(
+                strokeWidth: 1,
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                    : null,
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuad9Logo(bool isTV, bool isCompact) {
+    double size = isTV ? 24 : (isCompact ? 16 : 18);
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.2),
+            spreadRadius: 1,
+            blurRadius: 2,
+          ),
+        ],
+      ),
+      child: Center(
+        child: Image.network(
+          'https://www.quad9.net/favicon.ico',
+          width: size * 0.8,
+          height: size * 0.8,
+          errorBuilder: (context, error, stackTrace) {
+            return Container(
+              width: size * 0.8,
+              height: size * 0.8,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Text(
+                  '9',
+                  style: TextStyle(
+                    fontSize: size * 0.5,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            );
+          },
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return SizedBox(
+              width: size * 0.6,
+              height: size * 0.6,
+              child: CircularProgressIndicator(
+                strokeWidth: 1,
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                    : null,
+              ),
+            );
+          },
         ),
       ),
     );
   }
 }
+
+
