@@ -2,6 +2,8 @@ package com.thecableguy.dns
 
 import android.app.Activity
 import android.content.Intent
+import android.content.ComponentName
+import android.content.pm.PackageManager
 import android.net.VpnService
 import android.util.Log
 import io.flutter.embedding.android.FlutterActivity
@@ -95,6 +97,32 @@ class MainActivity: FlutterActivity() {
                     } catch (e: Exception) {
                         Log.e(TAG, "MainActivity: Error stopping VPN service", e)
                         result.error("STOP_VPN_ERROR", "Failed to stop VPN service: ${e.message}", null)
+                    }
+                }
+                "setAutoStart" -> {
+                    Log.i(TAG, "MainActivity: Processing setAutoStart request")
+                    try {
+                        val enabled = call.argument<Boolean>("enabled") ?: false
+                        Log.i(TAG, "MainActivity: Setting auto-start to: $enabled")
+
+                        val componentName = ComponentName(this, BootReceiver::class.java)
+                        val newState = if (enabled) {
+                            PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+                        } else {
+                            PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+                        }
+
+                        packageManager.setComponentEnabledSetting(
+                            componentName,
+                            newState,
+                            PackageManager.DONT_KILL_APP
+                        )
+
+                        result.success(null)
+                        Log.i(TAG, "MainActivity: Auto-start setting updated successfully")
+                    } catch (e: Exception) {
+                        Log.e(TAG, "MainActivity: Error setting auto-start", e)
+                        result.error("AUTO_START_ERROR", "Failed to set auto-start: ${e.message}", null)
                     }
                 }
                 else -> {

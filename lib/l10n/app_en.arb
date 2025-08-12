@@ -51,6 +51,14 @@
   "@quad9Blocking": {
     "description": "Quad9 DNS with ad blocking preset button"
   },
+  "autoStart": "Start on boot",
+  "@autoStart": {
+    "description": "Auto-start application setting"
+  },
+  "settings": "Settings",
+  "@settings": {
+    "description": "Settings section label"
+  },
   "failedToStartVpn": "Failed to start VPN: {error}",
   "@failedToStartVpn": {
     "description": "Error message when VPN fails to start",

@@ -48,6 +48,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get quad9Blocking => 'Quad9 + Bloqueador';
 
   @override
+  String get autoStart => 'Iniciar al arranque';
+
+  @override
+  String get settings => 'Configuración';
+
+  @override
   String failedToStartVpn(String error) {
     return 'Error al iniciar VPN: $error';
   }

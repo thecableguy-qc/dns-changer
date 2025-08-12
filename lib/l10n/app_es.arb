@@ -12,6 +12,8 @@
   "cloudflareBlocking": "Cloudflare + Bloqueador",
   "quad9": "Quad9",
   "quad9Blocking": "Quad9 + Bloqueador",
+  "autoStart": "Iniciar al arranque",
+  "settings": "Configuración",
   "failedToStartVpn": "Error al iniciar VPN: {error}",
   "failedToStopVpn": "Error al detener VPN: {error}"
 }

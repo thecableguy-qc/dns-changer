@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'l10n/app_localizations.dart';
 
 void main() {
@@ -47,11 +48,13 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _dns2Controller = TextEditingController(text: '8.8.4.4');
   bool _isVpnActive = false;
   String _appVersion = '';
+  bool _autoStartEnabled = false;
 
   @override
   void initState() {
     super.initState();
     _loadAppVersion();
+    _loadAutoStartSetting();
   }
 
   @override
@@ -71,6 +74,37 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _appVersion = '1.0.0+1'; // Fallback version
       });
+    }
+  }
+
+  Future<void> _loadAutoStartSetting() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      setState(() {
+        _autoStartEnabled = prefs.getBool('autoStart') ?? false;
+      });
+    } catch (e) {
+      // Handle error silently
+    }
+  }
+
+  Future<void> _setAutoStart(bool enabled) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('autoStart', enabled);
+
+      // Call platform method to enable/disable auto-start
+      await platform.invokeMethod('setAutoStart', {'enabled': enabled});
+
+      setState(() {
+        _autoStartEnabled = enabled;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update auto-start setting: $e')),
+        );
+      }
     }
   }
 
@@ -160,88 +194,197 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  // VPN Toggle Button - combines status and control
-                  GestureDetector(
-                    onTap: _isVpnActive ? _stopVpn : _startVpn,
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: isTV ? 20 : (isCompact ? 12 : 16),
-                        vertical: isTV ? 16 : (isCompact ? 8 : 12),
-                      ),
-                      decoration: BoxDecoration(
-                        color: _isVpnActive ? Colors.green.shade100 : Colors.red.shade100,
-                        borderRadius: BorderRadius.circular(isTV ? 12 : 8),
-                        border: Border.all(
-                          color: _isVpnActive ? Colors.green : Colors.red,
-                          width: 2,
+                  // Main Control, DNS, and Settings Section - Three column layout
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Left side - Start/Stop Button
+                      Expanded(
+                        flex: 1,
+                        child: Container(
+                          height: isTV ? 160 : (isCompact ? 120 : 140), // Fixed height for all sections
+                          child: GestureDetector(
+                            onTap: _isVpnActive ? _stopVpn : _startVpn,
+                            child: Container(
+                              width: double.infinity,
+                              height: double.infinity,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: isTV ? 16 : (isCompact ? 8 : 12),
+                                vertical: isTV ? 12 : (isCompact ? 6 : 8),
+                              ),
+                              decoration: BoxDecoration(
+                                color: _isVpnActive ? Colors.green.shade100 : Colors.red.shade100,
+                                borderRadius: BorderRadius.circular(isTV ? 8 : 6),
+                                border: Border.all(
+                                  color: _isVpnActive ? Colors.green : Colors.red,
+                                  width: 2,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: (_isVpnActive ? Colors.green : Colors.red).withOpacity(0.3),
+                                    blurRadius: 6,
+                                    offset: Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    _isVpnActive ? Icons.stop : Icons.play_arrow,
+                                    color: _isVpnActive ? Colors.green.shade700 : Colors.red.shade700,
+                                    size: isTV ? 32 : (isCompact ? 22 : 28),
+                                  ),
+                                  SizedBox(height: isTV ? 12 : (isCompact ? 6 : 8)),
+                                  Text(
+                                    _isVpnActive ? AppLocalizations.of(context)!.vpnActive : AppLocalizations.of(context)!.vpnInactive,
+                                    style: TextStyle(
+                                      fontSize: isTV ? 14 : (isCompact ? 10 : 12),
+                                      fontWeight: FontWeight.bold,
+                                      color: _isVpnActive ? Colors.green.shade800 : Colors.red.shade800,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  SizedBox(height: isTV ? 4 : (isCompact ? 2 : 3)),
+                                  Text(
+                                    _isVpnActive ? AppLocalizations.of(context)!.stop : AppLocalizations.of(context)!.start,
+                                    style: TextStyle(
+                                      fontSize: isTV ? 10 : (isCompact ? 8 : 9),
+                                      color: _isVpnActive ? Colors.green.shade600 : Colors.red.shade600,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: (_isVpnActive ? Colors.green : Colors.red).withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: Offset(0, 4),
-                          ),
-                        ],
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            _isVpnActive ? Icons.stop : Icons.play_arrow,
-                            color: _isVpnActive ? Colors.green.shade700 : Colors.red.shade700,
-                            size: isTV ? 32 : (isCompact ? 20 : 24),
+
+                      SizedBox(width: isTV ? 12 : (isCompact ? 6 : 8)),
+
+                      // Middle - DNS Input Fields
+                      Expanded(
+                        flex: 2,
+                        child: Container(
+                          height: isTV ? 160 : (isCompact ? 120 : 140), // Fixed height for all sections
+                          padding: EdgeInsets.all(isTV ? 12 : (isCompact ? 6 : 8)),
+                          decoration: BoxDecoration(
+                            color: isTV ? Colors.grey.shade900 : Colors.grey.shade50,
+                            borderRadius: BorderRadius.circular(isTV ? 8 : 6),
+                            border: Border.all(
+                              color: isTV ? Colors.grey.shade700 : Colors.grey.shade300,
+                              width: 1,
+                            ),
                           ),
-                          SizedBox(width: isTV ? 16 : (isCompact ? 8 : 12)),
-                          Column(
-                            mainAxisSize: MainAxisSize.min,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                _isVpnActive ? AppLocalizations.of(context)!.vpnActive : AppLocalizations.of(context)!.vpnInactive,
+                                'DNS Servers',
                                 style: TextStyle(
-                                  fontSize: isTV ? 20 : (isCompact ? 14 : 16),
-                                  fontWeight: FontWeight.bold,
-                                  color: _isVpnActive ? Colors.green.shade800 : Colors.red.shade800,
+                                  fontSize: isTV ? 12 : (isCompact ? 9 : 10),
+                                  fontWeight: FontWeight.w600,
+                                  color: isTV ? Colors.white70 : Colors.black87,
                                 ),
                               ),
+                              SizedBox(height: isTV ? 8 : (isCompact ? 4 : 6)),
+
+                              // Primary DNS
                               Text(
-                                _isVpnActive ? AppLocalizations.of(context)!.stop : AppLocalizations.of(context)!.start,
+                                AppLocalizations.of(context)!.primary,
                                 style: TextStyle(
-                                  fontSize: isTV ? 14 : (isCompact ? 10 : 12),
-                                  color: _isVpnActive ? Colors.green.shade600 : Colors.red.shade600,
+                                  fontSize: isTV ? 10 : (isCompact ? 8 : 9),
+                                  color: isTV ? Colors.white70 : Colors.black87,
                                 ),
+                              ),
+                              SizedBox(height: isTV ? 4 : (isCompact ? 2 : 3)),
+                              _buildCompactDnsInputField(
+                                controller: _dns1Controller,
+                                hint: "8.8.8.8",
+                                enabled: !_isVpnActive,
+                                isTV: isTV,
+                                isCompact: isCompact,
+                              ),
+
+                              SizedBox(height: isTV ? 12 : (isCompact ? 6 : 8)),
+
+                              // Secondary DNS
+                              Text(
+                                AppLocalizations.of(context)!.secondary,
+                                style: TextStyle(
+                                  fontSize: isTV ? 10 : (isCompact ? 8 : 9),
+                                  color: isTV ? Colors.white70 : Colors.black87,
+                                ),
+                              ),
+                              SizedBox(height: isTV ? 4 : (isCompact ? 2 : 3)),
+                              _buildCompactDnsInputField(
+                                controller: _dns2Controller,
+                                hint: "8.8.4.4",
+                                enabled: !_isVpnActive,
+                                isTV: isTV,
+                                isCompact: isCompact,
                               ),
                             ],
                           ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  SizedBox(height: isTV ? 20 : (isCompact ? 12 : 16)),
-
-                  // DNS Input Fields in a Row for better space usage
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildDnsInputField(
-                          controller: _dns1Controller,
-                          label: AppLocalizations.of(context)!.primary,
-                          hint: "8.8.8.8",
-                          enabled: !_isVpnActive,
-                          isTV: isTV,
-                          isCompact: isCompact,
                         ),
                       ),
-                      SizedBox(width: isTV ? 12 : (isCompact ? 4 : 6)),
+
+                      SizedBox(width: isTV ? 12 : (isCompact ? 6 : 8)),
+
+                      // Right side - Settings Section
                       Expanded(
-                        child: _buildDnsInputField(
-                          controller: _dns2Controller,
-                          label: AppLocalizations.of(context)!.secondary,
-                          hint: "8.8.4.4",
-                          enabled: !_isVpnActive,
-                          isTV: isTV,
-                          isCompact: isCompact,
+                        flex: 1,
+                        child: Container(
+                          height: isTV ? 160 : (isCompact ? 120 : 140), // Fixed height for all sections
+                          padding: EdgeInsets.all(isTV ? 12 : (isCompact ? 6 : 8)),
+                          decoration: BoxDecoration(
+                            color: isTV ? Colors.grey.shade900 : Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(isTV ? 8 : 6),
+                            border: Border.all(
+                              color: isTV ? Colors.grey.shade700 : Colors.grey.shade300,
+                              width: 1,
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                AppLocalizations.of(context)!.settings,
+                                style: TextStyle(
+                                  fontSize: isTV ? 12 : (isCompact ? 9 : 10),
+                                  fontWeight: FontWeight.w600,
+                                  color: isTV ? Colors.white70 : Colors.black87,
+                                ),
+                              ),
+                              SizedBox(height: isTV ? 16 : (isCompact ? 8 : 12)),
+
+                              // Auto-start toggle
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      AppLocalizations.of(context)!.autoStart,
+                                      style: TextStyle(
+                                        fontSize: isTV ? 10 : (isCompact ? 8 : 9),
+                                        color: isTV ? Colors.white70 : Colors.black87,
+                                      ),
+                                    ),
+                                  ),
+                                  Transform.scale(
+                                    scale: isTV ? 0.8 : (isCompact ? 0.7 : 0.8),
+                                    child: Switch(
+                                      value: _autoStartEnabled,
+                                      onChanged: _setAutoStart,
+                                      activeColor: Colors.blue,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
@@ -249,18 +392,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   // Only show presets when VPN is not connected
                   if (!_isVpnActive) ...[
-                    SizedBox(height: isTV ? 16 : (isCompact ? 6 : 10)),
+                    SizedBox(height: isTV ? 12 : (isCompact ? 4 : 6)),
 
-                    // DNS Presets - smaller text and more compact grid
+                    // DNS Presets - more compact
                     Text(
                       AppLocalizations.of(context)!.presets,
                       style: TextStyle(
-                        fontSize: isTV ? 16 : (isCompact ? 12 : 14),
+                        fontSize: isTV ? 14 : (isCompact ? 10 : 12),
                         fontWeight: FontWeight.bold,
                         color: isTV ? Colors.white70 : Colors.black87,
                       ),
                     ),
-                    SizedBox(height: isTV ? 8 : (isCompact ? 4 : 6)),
+                    SizedBox(height: isTV ? 6 : (isCompact ? 3 : 4)),
 
                     // Preset buttons in a 2x3 grid (2 rows, 3 columns)
                     Column(
@@ -282,7 +425,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ],
                         ),
-                        SizedBox(height: isTV ? 8 : (isCompact ? 4 : 6)),
+                        SizedBox(height: isTV ? 6 : (isCompact ? 3 : 4)),
                         // Second row with ad-blocking presets
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -305,7 +448,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
 
                   // Contact Information and Version
-                  SizedBox(height: isTV ? 20 : (isCompact ? 8 : 12)),
+                  SizedBox(height: isTV ? 12 : (isCompact ? 6 : 8)),
 
                   Container(
                     padding: EdgeInsets.all(isTV ? 16 : (isCompact ? 8 : 12)),
@@ -444,9 +587,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildDnsInputField({
+  Widget _buildCompactDnsInputField({
     required TextEditingController controller,
-    required String label,
     required String hint,
     required bool enabled,
     required bool isTV,
@@ -456,43 +598,37 @@ class _HomeScreenState extends State<HomeScreen> {
       controller: controller,
       enabled: enabled,
       style: TextStyle(
-        fontSize: isTV ? 16 : (isCompact ? 12 : 14),
+        fontSize: isTV ? 12 : (isCompact ? 10 : 11),
         color: isTV ? Colors.white : null,
       ),
       decoration: InputDecoration(
-        labelText: label,
         hintText: hint,
-        labelStyle: TextStyle(
-          fontSize: isTV ? 14 : (isCompact ? 10 : 12),
-          color: isTV ? Colors.white70 : null,
-        ),
         hintStyle: TextStyle(
-          color: isTV ? Colors.white54 : null,
+          fontSize: isTV ? 11 : (isCompact ? 9 : 10),
+          color: isTV ? Colors.white54 : Colors.grey.shade500,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(isTV ? 10 : (isCompact ? 4 : 6)),
+          borderRadius: BorderRadius.circular(isTV ? 6 : 4),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(isTV ? 10 : (isCompact ? 4 : 6)),
+          borderRadius: BorderRadius.circular(isTV ? 6 : 4),
           borderSide: BorderSide(
-            color: isTV ? Colors.white30 : Colors.grey,
+            color: isTV ? Colors.white30 : Colors.grey.shade400,
             width: 1,
           ),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(isTV ? 10 : (isCompact ? 4 : 6)),
+          borderRadius: BorderRadius.circular(isTV ? 6 : 4),
           borderSide: BorderSide(
             color: isTV ? Colors.blue.shade300 : Colors.blue,
-            width: 2,
+            width: 1.5,
           ),
         ),
-        prefixIcon: Icon(
-          Icons.dns,
-          color: isTV ? Colors.white54 : null,
-          size: isTV ? 20 : (isCompact ? 14 : 16),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: isTV ? 8 : (isCompact ? 6 : 7),
+          vertical: isTV ? 6 : (isCompact ? 4 : 5),
         ),
-        contentPadding: EdgeInsets.all(isTV ? 12 : (isCompact ? 6 : 8)),
-        isDense: true, // Always dense for compact layout
+        isDense: true,
       ),
       keyboardType: TextInputType.number,
       inputFormatters: [
@@ -511,26 +647,26 @@ class _HomeScreenState extends State<HomeScreen> {
       },
       style: ElevatedButton.styleFrom(
         padding: EdgeInsets.symmetric(
-          horizontal: isTV ? 12 : (isCompact ? 3 : 6),
-          vertical: isTV ? 8 : (isCompact ? 3 : 6),
+          horizontal: isTV ? 8 : (isCompact ? 2 : 4),
+          vertical: isTV ? 6 : (isCompact ? 2 : 4),
         ),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(isTV ? 8 : (isCompact ? 4 : 6)),
+          borderRadius: BorderRadius.circular(isTV ? 6 : (isCompact ? 3 : 4)),
         ),
         backgroundColor: isTV ? Colors.grey.shade800 : Colors.white,
         foregroundColor: isTV ? Colors.white : Colors.black87,
-        minimumSize: Size(0, isCompact ? 28 : 36), // Minimum height
+        minimumSize: Size(0, isCompact ? 24 : 32), // Even smaller minimum height
         elevation: isTV ? 2 : 1,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           logoBuilder(isTV, isCompact),
-          SizedBox(height: isTV ? 4 : (isCompact ? 2 : 3)),
+          SizedBox(height: isTV ? 3 : (isCompact ? 1 : 2)),
           Text(
             name,
             style: TextStyle(
-              fontSize: isTV ? 12 : (isCompact ? 8 : 9),
+              fontSize: isTV ? 10 : (isCompact ? 7 : 8),
               fontWeight: isTV ? FontWeight.w600 : FontWeight.w500,
             ),
             textAlign: TextAlign.center,
@@ -543,7 +679,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildGoogleLogo(bool isTV, bool isCompact) {
-    double size = isTV ? 24 : (isCompact ? 16 : 18);
+    double size = isTV ? 20 : (isCompact ? 12 : 14);
     return Container(
       width: size,
       height: size,
@@ -590,7 +726,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildCloudflareLogo(bool isTV, bool isCompact) {
-    double size = isTV ? 24 : (isCompact ? 16 : 18);
+    double size = isTV ? 20 : (isCompact ? 12 : 14);
     return Container(
       width: size,
       height: size,
@@ -642,7 +778,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildQuad9Logo(bool isTV, bool isCompact) {
-    double size = isTV ? 24 : (isCompact ? 16 : 18);
+    double size = isTV ? 20 : (isCompact ? 12 : 14);
     return Container(
       width: size,
       height: size,
@@ -703,7 +839,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildCloudflareBlockingLogo(bool isTV, bool isCompact) {
-    double size = isTV ? 24 : (isCompact ? 16 : 18);
+    double size = isTV ? 20 : (isCompact ? 12 : 14);
     return Container(
       width: size,
       height: size,
@@ -785,7 +921,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildQuad9BlockingLogo(bool isTV, bool isCompact) {
-    double size = isTV ? 24 : (isCompact ? 16 : 18);
+    double size = isTV ? 20 : (isCompact ? 12 : 14);
     return Container(
       width: size,
       height: size,

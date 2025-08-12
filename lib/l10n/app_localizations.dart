@@ -178,6 +178,18 @@ abstract class AppLocalizations {
   /// **'Quad9 + Blocker'**
   String get quad9Blocking;
 
+  /// Auto-start application setting
+  ///
+  /// In en, this message translates to:
+  /// **'Start on boot'**
+  String get autoStart;
+
+  /// Settings section label
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settings;
+
   /// Error message when VPN fails to start
   ///
   /// In en, this message translates to:
