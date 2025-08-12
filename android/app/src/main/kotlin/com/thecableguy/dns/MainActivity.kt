@@ -1,5 +1,6 @@
 package com.thecableguy.dns
 
+import android.app.Activity
 import android.content.Intent
 import android.net.VpnService
 import android.util.Log
@@ -11,6 +12,44 @@ class MainActivity: FlutterActivity() {
     private val CHANNEL = "vpn_channel"
     private val TAG = "MainActivity"
     private val VPN_REQUEST_CODE = 1001
+    private var pendingResult: MethodChannel.Result? = null
+    private var pendingDns1: String = ""
+    private var pendingDns2: String = ""
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        
+        if (requestCode == VPN_REQUEST_CODE) {
+            Log.i(TAG, "VPN permission result: requestCode=$requestCode, resultCode=$resultCode")
+            if (resultCode == Activity.RESULT_OK) {
+                Log.i(TAG, "VPN permission granted, starting VPN service")
+                startVpnService(pendingDns1, pendingDns2, pendingResult)
+            } else {
+                Log.w(TAG, "VPN permission denied by user")
+                pendingResult?.error("VPN_PERMISSION_DENIED", "VPN permission was denied by user", null)
+            }
+            // Clear pending data
+            pendingResult = null
+            pendingDns1 = ""
+            pendingDns2 = ""
+        }
+    }
+
+    private fun startVpnService(dns1: String, dns2: String, result: MethodChannel.Result?) {
+        try {
+            val serviceIntent = Intent(this, DnsVpnService::class.java)
+            serviceIntent.putExtra("dns1", dns1)
+            serviceIntent.putExtra("dns2", dns2)
+            Log.i(TAG, "MainActivity: Created intent for DnsVpnService with DNS parameters - DNS1: $dns1, DNS2: $dns2")
+            startService(serviceIntent)
+            Log.i(TAG, "MainActivity: Started DnsVpnService successfully")
+            result?.success(null)
+            Log.i(TAG, "MainActivity: Returned success to Flutter")
+        } catch (e: Exception) {
+            Log.e(TAG, "MainActivity: Error starting VPN service", e)
+            result?.error("START_VPN_ERROR", "Failed to start VPN service: ${e.message}", null)
+        }
+    }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -31,24 +70,16 @@ class MainActivity: FlutterActivity() {
                     // Check VPN permission first
                     val intent = VpnService.prepare(this)
                     if (intent != null) {
-                        Log.w(TAG, "MainActivity: VPN permission not granted, requesting permission")
+                        Log.i(TAG, "MainActivity: VPN permission required, requesting permission")
+                        // Store the parameters and result for later use
+                        pendingDns1 = dns1
+                        pendingDns2 = dns2
+                        pendingResult = result
+                        // Launch the permission request
                         startActivityForResult(intent, VPN_REQUEST_CODE)
-                        result.error("VPN_PERMISSION_REQUIRED", "VPN permission required", null)
-                        return@setMethodCallHandler
-                    }
-
-                    try {
-                        val serviceIntent = Intent(this, DnsVpnService::class.java)
-                        serviceIntent.putExtra("dns1", dns1)
-                        serviceIntent.putExtra("dns2", dns2)
-                        Log.i(TAG, "MainActivity: Created intent for DnsVpnService with DNS parameters")
-                        startService(serviceIntent)
-                        Log.i(TAG, "MainActivity: Started DnsVpnService successfully")
-                        result.success(null)
-                        Log.i(TAG, "MainActivity: Returned success to Flutter")
-                    } catch (e: Exception) {
-                        Log.e(TAG, "MainActivity: Error starting VPN service", e)
-                        result.error("START_VPN_ERROR", "Failed to start VPN service: ${e.message}", null)
+                    } else {
+                        Log.i(TAG, "MainActivity: VPN permission already granted")
+                        startVpnService(dns1, dns2, result)
                     }
                 }
                 "stopVpn" -> {

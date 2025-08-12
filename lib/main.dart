@@ -104,6 +104,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Image.asset(
+            'assets/images/TheCableGuy-Logo-DNS.png',
+            fit: BoxFit.contain,
+          ),
+        ),
         title: Text(AppLocalizations.of(context)!.appTitle),
         centerTitle: true,
         backgroundColor: isTV ? Colors.black87 : null,
@@ -208,36 +215,39 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
 
-                  SizedBox(height: isTV ? 16 : (isCompact ? 6 : 10)),
+                  // Only show presets when VPN is not connected
+                  if (!_isVpnActive) ...[
+                    SizedBox(height: isTV ? 16 : (isCompact ? 6 : 10)),
 
-                  // DNS Presets - smaller text and more compact grid
-                  Text(
-                    AppLocalizations.of(context)!.presets,
-                    style: TextStyle(
-                      fontSize: isTV ? 16 : (isCompact ? 12 : 14),
-                      fontWeight: FontWeight.bold,
-                      color: isTV ? Colors.white70 : Colors.black87,
+                    // DNS Presets - smaller text and more compact grid
+                    Text(
+                      AppLocalizations.of(context)!.presets,
+                      style: TextStyle(
+                        fontSize: isTV ? 16 : (isCompact ? 12 : 14),
+                        fontWeight: FontWeight.bold,
+                        color: isTV ? Colors.white70 : Colors.black87,
+                      ),
                     ),
-                  ),
-                  SizedBox(height: isTV ? 8 : (isCompact ? 4 : 6)),
+                    SizedBox(height: isTV ? 8 : (isCompact ? 4 : 6)),
 
-                  // Preset buttons in a single horizontal row - disabled when VPN is active
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      Expanded(
-                        child: _buildPresetButtonWithLogo(AppLocalizations.of(context)!.google, "8.8.8.8", "8.8.4.4", _buildGoogleLogo, isTV, isCompact),
-                      ),
-                      SizedBox(width: isTV ? 8 : (isCompact ? 4 : 6)),
-                      Expanded(
-                        child: _buildPresetButtonWithLogo(AppLocalizations.of(context)!.cloudflare, "1.1.1.1", "1.0.0.1", _buildCloudflareLogo, isTV, isCompact),
-                      ),
-                      SizedBox(width: isTV ? 8 : (isCompact ? 4 : 6)),
-                      Expanded(
-                        child: _buildPresetButtonWithLogo(AppLocalizations.of(context)!.quad9, "9.9.9.9", "149.112.112.112", _buildQuad9Logo, isTV, isCompact),
-                      ),
-                    ],
-                  ),
+                    // Preset buttons in a single horizontal row
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Expanded(
+                          child: _buildPresetButtonWithLogo(AppLocalizations.of(context)!.google, "8.8.8.8", "8.8.4.4", _buildGoogleLogo, isTV, isCompact),
+                        ),
+                        SizedBox(width: isTV ? 8 : (isCompact ? 4 : 6)),
+                        Expanded(
+                          child: _buildPresetButtonWithLogo(AppLocalizations.of(context)!.cloudflare, "1.1.1.1", "1.0.0.1", _buildCloudflareLogo, isTV, isCompact),
+                        ),
+                        SizedBox(width: isTV ? 8 : (isCompact ? 4 : 6)),
+                        Expanded(
+                          child: _buildPresetButtonWithLogo(AppLocalizations.of(context)!.quad9, "9.9.9.9", "149.112.112.112", _buildQuad9Logo, isTV, isCompact),
+                        ),
+                      ],
+                    ),
+                  ],
 
                   // Minimal bottom padding
                   SizedBox(height: isCompact ? 4 : 8),
