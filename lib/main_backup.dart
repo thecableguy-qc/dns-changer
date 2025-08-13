@@ -55,29 +55,15 @@ class _HomeScreenState extends State<HomeScreen> {
   final FocusNode _dns1Focus = FocusNode();
   final FocusNode _dns2Focus = FocusNode();
   final FocusNode _autoStartFocus = FocusNode();
-  final List<FocusNode> _presetFocusNodes = List.generate(5, (_) => FocusNode());
   final FocusNode _facebookFocus = FocusNode();
   final FocusNode _emailFocus = FocusNode();
+  final List<FocusNode> _presetFocusNodes = List.generate(5, (_) => FocusNode());
 
   @override
   void initState() {
     super.initState();
     _loadAppVersion();
     _loadAutoStartSetting();
-
-    // Add listeners to all focus nodes to trigger rebuilds when focus changes
-    _startStopFocus.addListener(() => setState(() {}));
-    _autoStartFocus.addListener(() => setState(() {}));
-    _facebookFocus.addListener(() => setState(() {}));
-    _emailFocus.addListener(() => setState(() {}));
-    for (final node in _presetFocusNodes) {
-      node.addListener(() => setState(() {}));
-    }
-
-    // Set initial focus to start/stop button for TV usage
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _startStopFocus.requestFocus();
-    });
   }
 
   @override
@@ -94,137 +80,6 @@ class _HomeScreenState extends State<HomeScreen> {
       node.dispose();
     }
     super.dispose();
-  }
-
-  // Handle key events for D-pad navigation
-  KeyEventResult _handleKeyEvent(FocusNode focusNode, KeyEvent event) {
-    if (event is KeyDownEvent) {
-      if (event.logicalKey == LogicalKeyboardKey.enter ||
-          event.logicalKey == LogicalKeyboardKey.select) {
-        if (focusNode == _startStopFocus) {
-          if (_isVpnActive) {
-            _stopVpn();
-          } else {
-            _startVpn();
-          }
-          return KeyEventResult.handled;
-        } else if (focusNode == _autoStartFocus) {
-          _setAutoStart(!_autoStartEnabled);
-          return KeyEventResult.handled;
-        } else if (focusNode == _facebookFocus) {
-          _launchUrl('https://www.facebook.com/share/169oPW4Sxq/');
-          return KeyEventResult.handled;
-        } else if (focusNode == _emailFocus) {
-          _launchUrl('mailto:alex.parent.qc@gmail.com');
-          return KeyEventResult.handled;
-        }
-
-        // Handle preset button activations
-        for (int i = 0; i < _presetFocusNodes.length; i++) {
-          if (focusNode == _presetFocusNodes[i]) {
-            switch (i) {
-              case 0: // Google
-                setState(() {
-                  _dns1Controller.text = "8.8.8.8";
-                  _dns2Controller.text = "8.8.4.4";
-                });
-                break;
-              case 1: // Cloudflare
-                setState(() {
-                  _dns1Controller.text = "1.1.1.1";
-                  _dns2Controller.text = "1.0.0.1";
-                });
-                break;
-              case 2: // Quad9
-                setState(() {
-                  _dns1Controller.text = "9.9.9.10";
-                  _dns2Controller.text = "149.112.112.10";
-                });
-                break;
-              case 3: // Cloudflare Blocking
-                setState(() {
-                  _dns1Controller.text = "1.1.1.2";
-                  _dns2Controller.text = "1.0.0.2";
-                });
-                break;
-              case 4: // Quad9 Blocking
-                setState(() {
-                  _dns1Controller.text = "9.9.9.9";
-                  _dns2Controller.text = "149.112.112.112";
-                });
-                break;
-            }
-            return KeyEventResult.handled;
-          }
-        }
-      }
-
-      // Handle directional navigation
-      if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
-        if (focusNode == _startStopFocus) {
-          _autoStartFocus.requestFocus();
-          return KeyEventResult.handled;
-        } else if (focusNode == _facebookFocus) {
-          _emailFocus.requestFocus();
-          return KeyEventResult.handled;
-        } else if (focusNode == _presetFocusNodes[0]) {
-          _presetFocusNodes[1].requestFocus();
-          return KeyEventResult.handled;
-        } else if (focusNode == _presetFocusNodes[1]) {
-          _presetFocusNodes[2].requestFocus();
-          return KeyEventResult.handled;
-        } else if (focusNode == _presetFocusNodes[3]) {
-          _presetFocusNodes[4].requestFocus();
-          return KeyEventResult.handled;
-        }
-      } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-        if (focusNode == _autoStartFocus) {
-          _startStopFocus.requestFocus();
-          return KeyEventResult.handled;
-        } else if (focusNode == _emailFocus) {
-          _facebookFocus.requestFocus();
-          return KeyEventResult.handled;
-        } else if (focusNode == _presetFocusNodes[1]) {
-          _presetFocusNodes[0].requestFocus();
-          return KeyEventResult.handled;
-        } else if (focusNode == _presetFocusNodes[2]) {
-          _presetFocusNodes[1].requestFocus();
-          return KeyEventResult.handled;
-        } else if (focusNode == _presetFocusNodes[4]) {
-          _presetFocusNodes[3].requestFocus();
-          return KeyEventResult.handled;
-        }
-      } else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-        if (focusNode == _startStopFocus && !_isVpnActive) {
-          _presetFocusNodes[0].requestFocus();
-          return KeyEventResult.handled;
-        } else if (focusNode == _autoStartFocus && !_isVpnActive) {
-          _presetFocusNodes[2].requestFocus();
-          return KeyEventResult.handled;
-        } else if (focusNode == _presetFocusNodes[0] || focusNode == _presetFocusNodes[1] || focusNode == _presetFocusNodes[2]) {
-          _presetFocusNodes[3].requestFocus();
-          return KeyEventResult.handled;
-        } else if (focusNode == _presetFocusNodes[3] || focusNode == _presetFocusNodes[4]) {
-          _facebookFocus.requestFocus();
-          return KeyEventResult.handled;
-        }
-      } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-        if (focusNode == _presetFocusNodes[0] || focusNode == _presetFocusNodes[1]) {
-          _startStopFocus.requestFocus();
-          return KeyEventResult.handled;
-        } else if (focusNode == _presetFocusNodes[2]) {
-          _autoStartFocus.requestFocus();
-          return KeyEventResult.handled;
-        } else if (focusNode == _presetFocusNodes[3] || focusNode == _presetFocusNodes[4]) {
-          _presetFocusNodes[0].requestFocus();
-          return KeyEventResult.handled;
-        } else if (focusNode == _facebookFocus || focusNode == _emailFocus) {
-          _presetFocusNodes[3].requestFocus();
-          return KeyEventResult.handled;
-        }
-      }
-    }
-    return KeyEventResult.ignored;
   }
 
   Future<void> _loadAppVersion() async {
@@ -346,8 +201,10 @@ class _HomeScreenState extends State<HomeScreen> {
         toolbarHeight: isCompact ? 40 : 48, // Even smaller app bar
       ),
       backgroundColor: isTV ? Colors.black : null,
-      body: Container(
-        padding: EdgeInsets.all(isTV ? 20.0 : (isCompact ? 4.0 : 8.0)),
+      body: FocusTraversalGroup(
+        policy: WidgetOrderTraversalPolicy(),
+        child: Container(
+          padding: EdgeInsets.all(isTV ? 20.0 : (isCompact ? 4.0 : 8.0)),
         child: Center(
           child: ConstrainedBox(
             constraints: BoxConstraints(
@@ -364,14 +221,35 @@ class _HomeScreenState extends State<HomeScreen> {
                       // Left side - Start/Stop Button
                       Expanded(
                         flex: 1,
-                        child: Focus(
-                          focusNode: _startStopFocus,
-                          onKeyEvent: (node, event) => _handleKeyEvent(node, event),
-                          child: Container(
-                            height: isTV ? 160 : (isCompact ? 120 : 140), // Fixed height for all sections
+                        child: SizedBox(
+                          height: isTV ? 160 : (isCompact ? 120 : 140), // Fixed height for all sections
+                          child: Focus(
+                            focusNode: _startStopFocus,
+                            onKey: (node, event) {
+                              if (event is RawKeyDownEvent) {
+                                if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+                                  FocusScope.of(context).requestFocus(_dns1Focus);
+                                  return KeyEventResult.handled;
+                                }
+                                if (event.logicalKey == LogicalKeyboardKey.arrowDown && !_isVpnActive) {
+                                  FocusScope.of(context).requestFocus(_presetFocusNodes[0]);
+                                  return KeyEventResult.handled;
+                                }
+                                if (event.logicalKey == LogicalKeyboardKey.enter || 
+                                    event.logicalKey == LogicalKeyboardKey.select) {
+                                  if (_isVpnActive) {
+                                    _stopVpn();
+                                  } else {
+                                    _startVpn();
+                                  }
+                                  return KeyEventResult.handled;
+                                }
+                              }
+                              return KeyEventResult.ignored;
+                            },
                             child: GestureDetector(
                               onTap: _isVpnActive ? _stopVpn : _startVpn,
-                              child: Container(
+                            child: Container(
                               width: double.infinity,
                               height: double.infinity,
                               padding: EdgeInsets.symmetric(
@@ -382,10 +260,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                 color: _isVpnActive ? Colors.green.shade100 : Colors.red.shade100,
                                 borderRadius: BorderRadius.circular(isTV ? 8 : 6),
                                 border: Border.all(
-                                    color: _startStopFocus.hasFocus ? Colors.yellow.shade600 :
-                                           (_isVpnActive ? Colors.green : Colors.red),
-                                    width: _startStopFocus.hasFocus ? 5 : 2,
-                                  ),
+                                  color: _isVpnActive ? Colors.green : Colors.red,
+                                  width: 2,
+                                ),
                                 boxShadow: [
                                   BoxShadow(
                                     color: (_isVpnActive ? Colors.green : Colors.red).withOpacity(0.3),
@@ -427,7 +304,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                       ),
-                      ),
 
                       SizedBox(width: isTV ? 12 : (isCompact ? 6 : 8)),
 
@@ -467,12 +343,33 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ),
                               SizedBox(height: isTV ? 4 : (isCompact ? 2 : 3)),
-                              _buildCompactDnsInputField(
-                                controller: _dns1Controller,
-                                hint: "8.8.8.8",
-                                enabled: !_isVpnActive,
-                                isTV: isTV,
-                                isCompact: isCompact,
+                              Focus(
+                                focusNode: _dns1Focus,
+                                onKey: (node, event) {
+                                  if (event is RawKeyDownEvent) {
+                                    if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                                      FocusScope.of(context).requestFocus(_dns2Focus);
+                                      return KeyEventResult.handled;
+                                    }
+                                    if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+                                      FocusScope.of(context).requestFocus(_startStopFocus);
+                                      return KeyEventResult.handled;
+                                    }
+                                    if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+                                      FocusScope.of(context).requestFocus(_autoStartFocus);
+                                      return KeyEventResult.handled;
+                                    }
+                                  }
+                                  return KeyEventResult.ignored;
+                                },
+                                child: _buildCompactDnsInputField(
+                                  controller: _dns1Controller,
+                                  hint: "8.8.8.8",
+                                  enabled: !_isVpnActive,
+                                  isTV: isTV,
+                                  isCompact: isCompact,
+                                  focusNode: _dns1Focus,
+                                ),
                               ),
 
                               SizedBox(height: isTV ? 12 : (isCompact ? 6 : 8)),
@@ -486,12 +383,33 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ),
                               SizedBox(height: isTV ? 4 : (isCompact ? 2 : 3)),
-                              _buildCompactDnsInputField(
-                                controller: _dns2Controller,
-                                hint: "8.8.4.4",
-                                enabled: !_isVpnActive,
-                                isTV: isTV,
-                                isCompact: isCompact,
+                              Focus(
+                                focusNode: _dns2Focus,
+                                onKey: (node, event) {
+                                  if (event is RawKeyDownEvent) {
+                                    if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+                                      FocusScope.of(context).requestFocus(_dns1Focus);
+                                      return KeyEventResult.handled;
+                                    }
+                                    if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+                                      FocusScope.of(context).requestFocus(_startStopFocus);
+                                      return KeyEventResult.handled;
+                                    }
+                                    if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+                                      FocusScope.of(context).requestFocus(_autoStartFocus);
+                                      return KeyEventResult.handled;
+                                    }
+                                  }
+                                  return KeyEventResult.ignored;
+                                },
+                                child: _buildCompactDnsInputField(
+                                  controller: _dns2Controller,
+                                  hint: "8.8.4.4",
+                                  enabled: !_isVpnActive,
+                                  isTV: isTV,
+                                  isCompact: isCompact,
+                                  focusNode: _dns2Focus,
+                                ),
                               ),
                             ],
                           ),
@@ -541,24 +459,32 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                                     ),
                                   ),
-                                  Transform.scale(
-                                    scale: isTV ? 0.8 : (isCompact ? 0.7 : 0.8),
-                                    child: Focus(
-                                      focusNode: _autoStartFocus,
-                                      onKeyEvent: (node, event) => _handleKeyEvent(node, event),
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(20),
-                                          border: _autoStartFocus.hasFocus ? Border.all(
-                                            color: Colors.yellow.shade600,
-                                            width: 3,
-                                          ) : null,
-                                        ),
-                                        child: Switch(
-                                          value: _autoStartEnabled,
-                                          onChanged: _setAutoStart,
-                                          activeColor: Colors.blue,
-                                        ),
+                                  Focus(
+                                    focusNode: _autoStartFocus,
+                                    onKey: (node, event) {
+                                      if (event is RawKeyDownEvent) {
+                                        if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+                                          FocusScope.of(context).requestFocus(_dns2Focus);
+                                          return KeyEventResult.handled;
+                                        }
+                                        if (event.logicalKey == LogicalKeyboardKey.arrowDown && !_isVpnActive) {
+                                          FocusScope.of(context).requestFocus(_presetFocusNodes[2]);
+                                          return KeyEventResult.handled;
+                                        }
+                                        if (event.logicalKey == LogicalKeyboardKey.enter || 
+                                            event.logicalKey == LogicalKeyboardKey.select) {
+                                          _setAutoStart(!_autoStartEnabled);
+                                          return KeyEventResult.handled;
+                                        }
+                                      }
+                                      return KeyEventResult.ignored;
+                                    },
+                                    child: Transform.scale(
+                                      scale: isTV ? 0.8 : (isCompact ? 0.7 : 0.8),
+                                      child: Switch(
+                                        value: _autoStartEnabled,
+                                        onChanged: _setAutoStart,
+                                        activeColor: Colors.blue,
                                       ),
                                     ),
                                   ),
@@ -594,15 +520,79 @@ class _HomeScreenState extends State<HomeScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
                             Expanded(
-                              child: _buildPresetButtonWithLogo(AppLocalizations.of(context)!.google, "8.8.8.8", "8.8.4.4", _buildGoogleLogo, isTV, isCompact, _presetFocusNodes[0]),
+                              child: Focus(
+                                focusNode: _presetFocusNodes[0],
+                                onKey: (node, event) {
+                                  if (event is RawKeyDownEvent) {
+                                    if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+                                      FocusScope.of(context).requestFocus(_presetFocusNodes[1]);
+                                      return KeyEventResult.handled;
+                                    }
+                                    if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+                                      FocusScope.of(context).requestFocus(_startStopFocus);
+                                      return KeyEventResult.handled;
+                                    }
+                                    if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                                      FocusScope.of(context).requestFocus(_facebookFocus);
+                                      return KeyEventResult.handled;
+                                    }
+                                  }
+                                  return KeyEventResult.ignored;
+                                },
+                                child: _buildPresetButtonWithLogo(AppLocalizations.of(context)!.google, "8.8.8.8", "8.8.4.4", _buildGoogleLogo, isTV, isCompact, _presetFocusNodes[0]),
+                              ),
                             ),
                             SizedBox(width: isTV ? 8 : (isCompact ? 4 : 6)),
                             Expanded(
-                              child: _buildPresetButtonWithLogo(AppLocalizations.of(context)!.cloudflare, "1.1.1.1", "1.0.0.1", _buildCloudflareLogo, isTV, isCompact, _presetFocusNodes[1]),
+                              child: Focus(
+                                focusNode: _presetFocusNodes[1],
+                                onKey: (node, event) {
+                                  if (event is RawKeyDownEvent) {
+                                    if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+                                      FocusScope.of(context).requestFocus(_presetFocusNodes[0]);
+                                      return KeyEventResult.handled;
+                                    }
+                                    if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+                                      FocusScope.of(context).requestFocus(_presetFocusNodes[2]);
+                                      return KeyEventResult.handled;
+                                    }
+                                    if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+                                      FocusScope.of(context).requestFocus(_dns1Focus);
+                                      return KeyEventResult.handled;
+                                    }
+                                    if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                                      FocusScope.of(context).requestFocus(_presetFocusNodes[3]);
+                                      return KeyEventResult.handled;
+                                    }
+                                  }
+                                  return KeyEventResult.ignored;
+                                },
+                                child: _buildPresetButtonWithLogo(AppLocalizations.of(context)!.cloudflare, "1.1.1.1", "1.0.0.1", _buildCloudflareLogo, isTV, isCompact, _presetFocusNodes[1]),
+                              ),
                             ),
                             SizedBox(width: isTV ? 8 : (isCompact ? 4 : 6)),
                             Expanded(
-                              child: _buildPresetButtonWithLogo(AppLocalizations.of(context)!.quad9, "9.9.9.10", "149.112.112.10", _buildQuad9Logo, isTV, isCompact, _presetFocusNodes[2]),
+                              child: Focus(
+                                focusNode: _presetFocusNodes[2],
+                                onKey: (node, event) {
+                                  if (event is RawKeyDownEvent) {
+                                    if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+                                      FocusScope.of(context).requestFocus(_presetFocusNodes[1]);
+                                      return KeyEventResult.handled;
+                                    }
+                                    if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+                                      FocusScope.of(context).requestFocus(_autoStartFocus);
+                                      return KeyEventResult.handled;
+                                    }
+                                    if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                                      FocusScope.of(context).requestFocus(_presetFocusNodes[4]);
+                                      return KeyEventResult.handled;
+                                    }
+                                  }
+                                  return KeyEventResult.ignored;
+                                },
+                                child: _buildPresetButtonWithLogo(AppLocalizations.of(context)!.quad9, "9.9.9.10", "149.112.112.10", _buildQuad9Logo, isTV, isCompact, _presetFocusNodes[2]),
+                              ),
                             ),
                           ],
                         ),
@@ -616,11 +606,51 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             SizedBox(width: isTV ? 8 : (isCompact ? 4 : 6)),
                             Expanded(
-                              child: _buildPresetButtonWithLogo(AppLocalizations.of(context)!.cloudflareBlocking, "1.1.1.2", "1.0.0.2", _buildCloudflareBlockingLogo, isTV, isCompact, _presetFocusNodes[3]),
+                              child: Focus(
+                                focusNode: _presetFocusNodes[3],
+                                onKey: (node, event) {
+                                  if (event is RawKeyDownEvent) {
+                                    if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+                                      FocusScope.of(context).requestFocus(_presetFocusNodes[4]);
+                                      return KeyEventResult.handled;
+                                    }
+                                    if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+                                      FocusScope.of(context).requestFocus(_presetFocusNodes[1]);
+                                      return KeyEventResult.handled;
+                                    }
+                                    if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                                      FocusScope.of(context).requestFocus(_facebookFocus);
+                                      return KeyEventResult.handled;
+                                    }
+                                  }
+                                  return KeyEventResult.ignored;
+                                },
+                                child: _buildPresetButtonWithLogo(AppLocalizations.of(context)!.cloudflareBlocking, "1.1.1.2", "1.0.0.2", _buildCloudflareBlockingLogo, isTV, isCompact, _presetFocusNodes[3]),
+                              ),
                             ),
                             SizedBox(width: isTV ? 8 : (isCompact ? 4 : 6)),
                             Expanded(
-                              child: _buildPresetButtonWithLogo(AppLocalizations.of(context)!.quad9Blocking, "9.9.9.9", "149.112.112.112", _buildQuad9BlockingLogo, isTV, isCompact, _presetFocusNodes[4]),
+                              child: Focus(
+                                focusNode: _presetFocusNodes[4],
+                                onKey: (node, event) {
+                                  if (event is RawKeyDownEvent) {
+                                    if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+                                      FocusScope.of(context).requestFocus(_presetFocusNodes[3]);
+                                      return KeyEventResult.handled;
+                                    }
+                                    if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+                                      FocusScope.of(context).requestFocus(_presetFocusNodes[2]);
+                                      return KeyEventResult.handled;
+                                    }
+                                    if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+                                      FocusScope.of(context).requestFocus(_emailFocus);
+                                      return KeyEventResult.handled;
+                                    }
+                                  }
+                                  return KeyEventResult.ignored;
+                                },
+                                child: _buildPresetButtonWithLogo(AppLocalizations.of(context)!.quad9Blocking, "9.9.9.9", "149.112.112.112", _buildQuad9BlockingLogo, isTV, isCompact, _presetFocusNodes[4]),
+                              ),
                             ),
                           ],
                         ),
@@ -659,7 +689,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             // Left Logo
-                            Container(
+                            SizedBox(
                               width: isTV ? 32 : (isCompact ? 20 : 24),
                               height: isTV ? 32 : (isCompact ? 20 : 24),
                               child: Image.asset(
@@ -673,22 +703,35 @@ class _HomeScreenState extends State<HomeScreen> {
                             // Facebook Link
                             Focus(
                               focusNode: _facebookFocus,
-                              onKeyEvent: (node, event) => _handleKeyEvent(node, event),
+                              onKey: (node, event) {
+                                if (event is RawKeyDownEvent) {
+                                  if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+                                    FocusScope.of(context).requestFocus(_emailFocus);
+                                    return KeyEventResult.handled;
+                                  }
+                                  if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+                                    FocusScope.of(context).requestFocus(_presetFocusNodes[0]);
+                                    return KeyEventResult.handled;
+                                  }
+                                  if (event.logicalKey == LogicalKeyboardKey.enter || 
+                                      event.logicalKey == LogicalKeyboardKey.select) {
+                                    _launchUrl('https://www.facebook.com/share/169oPW4Sxq/');
+                                    return KeyEventResult.handled;
+                                  }
+                                }
+                                return KeyEventResult.ignored;
+                              },
                               child: GestureDetector(
                                 onTap: () => _launchUrl('https://www.facebook.com/share/169oPW4Sxq/'),
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: isTV ? 12 : (isCompact ? 8 : 10),
-                                    vertical: isTV ? 8 : (isCompact ? 4 : 6),
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Color(0xFF1877F2), // Facebook blue
-                                    borderRadius: BorderRadius.circular(isTV ? 8 : 6),
-                                    border: _facebookFocus.hasFocus ? Border.all(
-                                      color: Colors.yellow.shade600,
-                                      width: 3,
-                                    ) : null,
-                                  ),
+                              child: Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: isTV ? 12 : (isCompact ? 8 : 10),
+                                  vertical: isTV ? 8 : (isCompact ? 4 : 6),
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Color(0xFF1877F2), // Facebook blue
+                                  borderRadius: BorderRadius.circular(isTV ? 8 : 6),
+                                ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
@@ -710,29 +753,21 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ),
                             ),
-                            ),
 
                             SizedBox(width: isTV ? 16 : (isCompact ? 8 : 12)),
 
                             // Email Link
-                            Focus(
-                              focusNode: _emailFocus,
-                              onKeyEvent: (node, event) => _handleKeyEvent(node, event),
-                              child: GestureDetector(
-                                onTap: () => _launchUrl('mailto:alex.parent.qc@gmail.com'),
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: isTV ? 12 : (isCompact ? 8 : 10),
-                                    vertical: isTV ? 8 : (isCompact ? 4 : 6),
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Color(0xFF34495E), // Dark gray for email
-                                    borderRadius: BorderRadius.circular(isTV ? 8 : 6),
-                                    border: _emailFocus.hasFocus ? Border.all(
-                                      color: Colors.yellow.shade600,
-                                      width: 3,
-                                    ) : null,
-                                  ),
+                            GestureDetector(
+                              onTap: () => _launchUrl('mailto:alex.parent.qc@gmail.com'),
+                              child: Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: isTV ? 12 : (isCompact ? 8 : 10),
+                                  vertical: isTV ? 8 : (isCompact ? 4 : 6),
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Color(0xFF34495E), // Dark gray for email
+                                  borderRadius: BorderRadius.circular(isTV ? 8 : 6),
+                                ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
@@ -754,12 +789,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ),
                             ),
-                            ),
 
                             SizedBox(width: isTV ? 12 : (isCompact ? 6 : 8)),
 
                             // Right Logo
-                            Container(
+                            SizedBox(
                               width: isTV ? 32 : (isCompact ? 20 : 24),
                               height: isTV ? 32 : (isCompact ? 20 : 24),
                               child: Image.asset(
@@ -790,10 +824,12 @@ class _HomeScreenState extends State<HomeScreen> {
     required bool enabled,
     required bool isTV,
     bool isCompact = false,
+    FocusNode? focusNode,
   }) {
     return TextField(
       controller: controller,
       enabled: enabled,
+      focusNode: focusNode,
       style: TextStyle(
         fontSize: isTV ? 12 : (isCompact ? 10 : 11),
         color: isTV ? Colors.white : null,
@@ -835,7 +871,19 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildPresetButtonWithLogo(String name, String dns1, String dns2, Widget Function(bool isTV, bool isCompact) logoBuilder, bool isTV, [bool isCompact = false, FocusNode? focusNode]) {
-    Widget button = ElevatedButton(
+    return Focus(
+      focusNode: focusNode,
+      onKey: (node, event) {
+        if (event is RawKeyDownEvent && event.logicalKey == LogicalKeyboardKey.enter || event.logicalKey == LogicalKeyboardKey.select) {
+          setState(() {
+            _dns1Controller.text = dns1;
+            _dns2Controller.text = dns2;
+          });
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: ElevatedButton(
       onPressed: () {
         setState(() {
           _dns1Controller.text = dns1;
@@ -850,10 +898,6 @@ class _HomeScreenState extends State<HomeScreen> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(isTV ? 6 : (isCompact ? 3 : 4)),
         ),
-        side: focusNode?.hasFocus == true ? BorderSide(
-          color: Colors.yellow.shade600,
-          width: 3,
-        ) : null,
         backgroundColor: isTV ? Colors.grey.shade800 : Colors.white,
         foregroundColor: isTV ? Colors.white : Colors.black87,
         minimumSize: Size(0, isCompact ? 24 : 32), // Even smaller minimum height
@@ -876,17 +920,8 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
+    ),
     );
-
-    if (focusNode != null) {
-      return Focus(
-        focusNode: focusNode,
-        onKeyEvent: (node, event) => _handleKeyEvent(node, event),
-        child: button,
-      );
-    }
-
-    return button;
   }
 
   Widget _buildGoogleLogo(bool isTV, bool isCompact) {
@@ -1051,7 +1086,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildCloudflareBlockingLogo(bool isTV, bool isCompact) {
     double size = isTV ? 20 : (isCompact ? 12 : 14);
-    return Container(
+    return SizedBox(
       width: size,
       height: size,
       child: Stack(
@@ -1133,7 +1168,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildQuad9BlockingLogo(bool isTV, bool isCompact) {
     double size = isTV ? 20 : (isCompact ? 12 : 14);
-    return Container(
+    return SizedBox(
       width: size,
       height: size,
       child: Stack(
