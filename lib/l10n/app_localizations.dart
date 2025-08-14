@@ -178,12 +178,6 @@ abstract class AppLocalizations {
   /// **'Quad9 + Blocker'**
   String get quad9Blocking;
 
-  /// Auto-start application setting
-  ///
-  /// In en, this message translates to:
-  /// **'Start on boot'**
-  String get autoStart;
-
   /// Settings section label
   ///
   /// In en, this message translates to:

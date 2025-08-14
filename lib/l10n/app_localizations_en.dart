@@ -48,9 +48,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get quad9Blocking => 'Quad9 + Blocker';
 
   @override
-  String get autoStart => 'Start on boot';
-
-  @override
   String get settings => 'Settings';
 
   @override
