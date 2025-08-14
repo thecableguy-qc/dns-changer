@@ -743,7 +743,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  // Main Control, DNS, and Settings Section - Three column layout
+                  // Main Control, DNS Section - Two column layout
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -824,7 +824,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
                       SizedBox(width: isTV ? 12 : (isCompact ? 6 : 8)),
 
-                      // Middle - DNS Input Fields
+                      // Right - DNS Input Fields (expanded to take more space)
                       Expanded(
                         flex: 2,
                         child: Container(
@@ -885,52 +885,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                 enabled: !_isVpnActive,
                                 isTV: isTV,
                                 isCompact: isCompact,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      SizedBox(width: isTV ? 12 : (isCompact ? 6 : 8)),
-
-                      // Right side - Settings Section
-                      Expanded(
-                        flex: 1,
-                        child: Container(
-                          height: isTV ? 160 : (isCompact ? 120 : 140), // Fixed height for all sections
-                          padding: EdgeInsets.all(isTV ? 12 : (isCompact ? 6 : 8)),
-                          decoration: BoxDecoration(
-                            color: isTV ? Colors.grey.shade900 : Colors.grey.shade100,
-                            borderRadius: BorderRadius.circular(isTV ? 8 : 6),
-                            border: Border.all(
-                              color: isTV ? Colors.grey.shade700 : Colors.grey.shade300,
-                              width: 1,
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                AppLocalizations.of(context)!.settings,
-                                style: TextStyle(
-                                  fontSize: isTV ? 12 : (isCompact ? 9 : 10),
-                                  fontWeight: FontWeight.w600,
-                                  color: isTV ? Colors.white70 : Colors.black87,
-                                ),
-                              ),
-                              SizedBox(height: isTV ? 16 : (isCompact ? 8 : 12)),
-
-                              // Settings section is now empty but preserved for future use
-                              Center(
-                                child: Text(
-                                  'No additional settings available',
-                                  style: TextStyle(
-                                    fontSize: isTV ? 10 : (isCompact ? 8 : 9),
-                                    color: isTV ? Colors.white54 : Colors.black54,
-                                    fontStyle: FontStyle.italic,
-                                  ),
-                                ),
                               ),
                             ],
                           ),
