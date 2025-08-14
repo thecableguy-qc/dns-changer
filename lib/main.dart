@@ -66,7 +66,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this); // Add lifecycle observer
-    
+
     _loadAppVersion();
     _loadPersistentState(); // Load all persistent application state
 
@@ -101,7 +101,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this); // Remove lifecycle observer
-    
+
     _dns1Controller.dispose();
     _dns2Controller.dispose();
     _startStopFocus.dispose();
@@ -118,9 +118,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    
+
     // Save state when app goes to background or is paused
-    if (state == AppLifecycleState.paused || 
+    if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached ||
         state == AppLifecycleState.inactive) {
       _savePersistentState();
@@ -368,21 +368,21 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     try {
       _isLoadingState = true; // Prevent saves during loading
       final prefs = await SharedPreferences.getInstance();
-      
+
       // Load DNS settings first
       final savedDns1 = prefs.getString('dns1') ?? '8.8.8.8';
       final savedDns2 = prefs.getString('dns2') ?? '8.8.4.4';
       final lastPreset = prefs.getString('lastPreset');
-      
+
       debugPrint("Raw stored values - DNS1: $savedDns1, DNS2: $savedDns2");
       debugPrint("Last preset: ${lastPreset ?? 'none'}");
-      
+
       setState(() {
         // Apply saved DNS values
         _dns1Controller.text = savedDns1;
         _dns2Controller.text = savedDns2;
       });
-      
+
       debugPrint("Applied to controllers - DNS1: ${_dns1Controller.text}, DNS2: ${_dns2Controller.text}");
 
       // Update tracking variables
@@ -399,7 +399,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       if (wasVpnActive && mounted) {
         // DNS settings are already loaded above - no need for duplicate values
         // The current DNS settings are the ones that were used for VPN
-        
+
         // Automatically restore VPN connection after a short delay
         // Delay ensures UI is fully initialized
         WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -407,7 +407,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           if (mounted && !_isVpnActive) {
             debugPrint("Auto-restoring VPN connection at startup");
             _startVpn();
-            
+
             // Show a brief notification about auto-reconnection
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -418,7 +418,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           }
         });
       }
-      
+
     } catch (e) {
       // If loading fails, use default values
       debugPrint("Failed to load persistent state: $e");
@@ -431,39 +431,39 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   // Save all persistent application state
   Future<void> _savePersistentState() async {
     if (_isLoadingState) return; // Don't save while loading
-    
+
     // Debounce saves - don't save more than once per second
     final now = DateTime.now();
     if (_lastSaveTime != null && now.difference(_lastSaveTime!).inMilliseconds < 1000) {
       debugPrint("Save debounced - too frequent");
       return;
     }
-    
+
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       // Save DNS settings (only one set needed)
       final dns1 = _dns1Controller.text.trim();
       final dns2 = _dns2Controller.text.trim();
-      
+
       bool dnsChanged = (dns1 != _lastSavedDns1 || dns2 != _lastSavedDns2);
-      
+
       await prefs.setString('dns1', dns1);
       await prefs.setString('dns2', dns2);
-      
+
       if (dnsChanged) {
         debugPrint("Saved DNS values: DNS1=$dns1, DNS2=$dns2");
         // Update tracking variables
         _lastSavedDns1 = dns1;
         _lastSavedDns2 = dns2;
       }
-      
+
       _lastSaveTime = now;
-      
+
       // Save VPN connection state
       await prefs.setBool('isVpnActive', _isVpnActive);
       await prefs.setBool('wasVpnActive', _isVpnActive);
-      
+
       // Save VPN session details when active
       if (_isVpnActive) {
         // Only set start timestamp if it doesn't already exist (first connection in this session)
@@ -476,10 +476,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         await prefs.remove('vpnStartTimestamp'); // Clear start timestamp when stopping
         await prefs.setInt('vpnStopTimestamp', DateTime.now().millisecondsSinceEpoch);
       }
-      
+
       // Save timestamp of last state save
       await prefs.setInt('lastSaveTimestamp', DateTime.now().millisecondsSinceEpoch);
-      
+
     } catch (e) {
       debugPrint("Failed to save persistent state: $e");
     }
@@ -532,17 +532,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void _showPersistentStateDebugInfo() async {
     final stateInfo = await _getPersistentStateInfo();
     final timestamp = stateInfo['lastSaveTimestamp'] as int;
-    final lastSaveTime = timestamp > 0 
+    final lastSaveTime = timestamp > 0
         ? DateTime.fromMillisecondsSinceEpoch(timestamp).toString()
         : 'Never';
 
     // Format VPN session timestamps
     final vpnStartTimestamp = stateInfo['vpnStartTimestamp'] as int;
     final vpnStopTimestamp = stateInfo['vpnStopTimestamp'] as int;
-    final vpnStartTime = vpnStartTimestamp > 0 
+    final vpnStartTime = vpnStartTimestamp > 0
         ? DateTime.fromMillisecondsSinceEpoch(vpnStartTimestamp).toString()
         : 'Never';
-    final vpnStopTime = vpnStopTimestamp > 0 
+    final vpnStopTime = vpnStopTimestamp > 0
         ? DateTime.fromMillisecondsSinceEpoch(vpnStopTimestamp).toString()
         : 'Never';
 
@@ -605,7 +605,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     if (!saveState) {
       _isLoadingState = true; // Temporarily disable saving if requested
     }
-    
+
     setState(() {
       switch (preset) {
         case 'Google':
@@ -630,9 +630,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           break;
       }
     });
-    
+
     _isLoadingState = oldLoadingState; // Restore original loading state
-    
+
     if (saveState) {
       // Save the preset choice and DNS values immediately
       _saveLastPreset(preset);
@@ -664,7 +664,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       setState(() {
         _isVpnActive = true;
       });
-      
+
       // Increment connection count for this new connection
       try {
         final prefs = await SharedPreferences.getInstance();
@@ -673,10 +673,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       } catch (e) {
         debugPrint("Failed to increment connection count: $e");
       }
-      
+
       // Save the current state after successful VPN start
       _savePersistentState();
-      
+
     } catch (e) {
       debugPrint("Flutter: Failed to start VPN: $e");
       if (mounted) {
@@ -695,10 +695,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       setState(() {
         _isVpnActive = false;
       });
-      
+
       // Save the current state after successful VPN stop
       _savePersistentState();
-      
+
     } catch (e) {
       debugPrint("Flutter: Failed to stop VPN: $e");
       if (mounted) {
@@ -920,7 +920,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                 ),
                               ),
                               SizedBox(height: isTV ? 16 : (isCompact ? 8 : 12)),
-                              
+
                               // Settings section is now empty but preserved for future use
                               Center(
                                 child: Text(
