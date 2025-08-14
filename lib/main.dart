@@ -159,69 +159,204 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       }
 
-      // Handle directional navigation
+      // Handle directional navigation with circular/wrap-around support
       if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
         if (focusNode == _startStopFocus) {
           _autoStartFocus.requestFocus();
           return KeyEventResult.handled;
+        } else if (focusNode == _autoStartFocus) {
+          // When VPN is active, wrap back to start, otherwise go to presets
+          if (_isVpnActive) {
+            _startStopFocus.requestFocus();
+          } else {
+            _presetFocusNodes[0].requestFocus();
+          }
+          return KeyEventResult.handled;
         } else if (focusNode == _facebookFocus) {
           _emailFocus.requestFocus();
           return KeyEventResult.handled;
-        } else if (focusNode == _presetFocusNodes[0]) {
+        } else if (focusNode == _emailFocus) {
+          // Wrap around to Facebook
+          _facebookFocus.requestFocus();
+          return KeyEventResult.handled;
+        } 
+        // Preset buttons navigation (top row)
+        else if (focusNode == _presetFocusNodes[0]) {
           _presetFocusNodes[1].requestFocus();
           return KeyEventResult.handled;
         } else if (focusNode == _presetFocusNodes[1]) {
           _presetFocusNodes[2].requestFocus();
           return KeyEventResult.handled;
-        } else if (focusNode == _presetFocusNodes[3]) {
+        } else if (focusNode == _presetFocusNodes[2]) {
+          // Wrap to first preset or go to auto-start if more logical
+          _autoStartFocus.requestFocus();
+          return KeyEventResult.handled;
+        }
+        // Preset buttons navigation (bottom row)
+        else if (focusNode == _presetFocusNodes[3]) {
           _presetFocusNodes[4].requestFocus();
+          return KeyEventResult.handled;
+        } else if (focusNode == _presetFocusNodes[4]) {
+          // Wrap to first preset in bottom row
+          _presetFocusNodes[3].requestFocus();
           return KeyEventResult.handled;
         }
       } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
         if (focusNode == _autoStartFocus) {
           _startStopFocus.requestFocus();
           return KeyEventResult.handled;
+        } else if (focusNode == _startStopFocus) {
+          // Wrap around to auto-start
+          _autoStartFocus.requestFocus();
+          return KeyEventResult.handled;
         } else if (focusNode == _emailFocus) {
           _facebookFocus.requestFocus();
           return KeyEventResult.handled;
-        } else if (focusNode == _presetFocusNodes[1]) {
+        } else if (focusNode == _facebookFocus) {
+          // Wrap around to email
+          _emailFocus.requestFocus();
+          return KeyEventResult.handled;
+        }
+        // Preset buttons navigation (top row)
+        else if (focusNode == _presetFocusNodes[1]) {
           _presetFocusNodes[0].requestFocus();
           return KeyEventResult.handled;
         } else if (focusNode == _presetFocusNodes[2]) {
           _presetFocusNodes[1].requestFocus();
           return KeyEventResult.handled;
-        } else if (focusNode == _presetFocusNodes[4]) {
+        } else if (focusNode == _presetFocusNodes[0]) {
+          // Wrap to last preset in top row
+          _presetFocusNodes[2].requestFocus();
+          return KeyEventResult.handled;
+        }
+        // Preset buttons navigation (bottom row)
+        else if (focusNode == _presetFocusNodes[4]) {
           _presetFocusNodes[3].requestFocus();
+          return KeyEventResult.handled;
+        } else if (focusNode == _presetFocusNodes[3]) {
+          // Wrap to last preset in bottom row
+          _presetFocusNodes[4].requestFocus();
           return KeyEventResult.handled;
         }
       } else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-        if (focusNode == _startStopFocus && !_isVpnActive) {
-          _presetFocusNodes[0].requestFocus();
+        if (focusNode == _startStopFocus) {
+          if (!_isVpnActive) {
+            _presetFocusNodes[0].requestFocus();
+          } else {
+            // When VPN is active, go to contacts since presets are hidden
+            _facebookFocus.requestFocus();
+          }
           return KeyEventResult.handled;
-        } else if (focusNode == _autoStartFocus && !_isVpnActive) {
-          _presetFocusNodes[2].requestFocus();
+        } else if (focusNode == _autoStartFocus) {
+          if (!_isVpnActive) {
+            _presetFocusNodes[2].requestFocus();
+          } else {
+            // When VPN is active, go to contacts
+            _emailFocus.requestFocus();
+          }
           return KeyEventResult.handled;
-        } else if (focusNode == _presetFocusNodes[0] || focusNode == _presetFocusNodes[1] || focusNode == _presetFocusNodes[2]) {
+        } 
+        // Top row presets to bottom row presets
+        else if (focusNode == _presetFocusNodes[0]) {
+          // Google has no direct match below, go to first available bottom preset
           _presetFocusNodes[3].requestFocus();
           return KeyEventResult.handled;
-        } else if (focusNode == _presetFocusNodes[3] || focusNode == _presetFocusNodes[4]) {
+        } else if (focusNode == _presetFocusNodes[1]) {
+          // Cloudflare to Cloudflare Blocking (center alignment)
+          _presetFocusNodes[3].requestFocus();
+          return KeyEventResult.handled;
+        } else if (focusNode == _presetFocusNodes[2]) {
+          // Quad9 to Quad9 Blocking (right alignment)
+          _presetFocusNodes[4].requestFocus();
+          return KeyEventResult.handled;
+        }
+        // Bottom row presets to contacts
+        else if (focusNode == _presetFocusNodes[3]) {
           _facebookFocus.requestFocus();
+          return KeyEventResult.handled;
+        } else if (focusNode == _presetFocusNodes[4]) {
+          _emailFocus.requestFocus();
+          return KeyEventResult.handled;
+        }
+        // Contacts wrap to top
+        else if (focusNode == _facebookFocus || focusNode == _emailFocus) {
+          _startStopFocus.requestFocus();
           return KeyEventResult.handled;
         }
       } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+        // Top controls
         if (focusNode == _presetFocusNodes[0] || focusNode == _presetFocusNodes[1]) {
           _startStopFocus.requestFocus();
           return KeyEventResult.handled;
         } else if (focusNode == _presetFocusNodes[2]) {
           _autoStartFocus.requestFocus();
           return KeyEventResult.handled;
-        } else if (focusNode == _presetFocusNodes[3] || focusNode == _presetFocusNodes[4]) {
-          _presetFocusNodes[0].requestFocus();
+        }
+        // Bottom row presets to top row presets
+        else if (focusNode == _presetFocusNodes[3]) {
+          // Cloudflare Blocking to Cloudflare (center alignment)
+          _presetFocusNodes[1].requestFocus();
           return KeyEventResult.handled;
-        } else if (focusNode == _facebookFocus || focusNode == _emailFocus) {
-          _presetFocusNodes[3].requestFocus();
+        } else if (focusNode == _presetFocusNodes[4]) {
+          // Quad9 Blocking to Quad9 (right alignment)
+          _presetFocusNodes[2].requestFocus();
           return KeyEventResult.handled;
         }
+        // Contacts to bottom presets (or top controls if VPN active)
+        else if (focusNode == _facebookFocus) {
+          if (!_isVpnActive) {
+            _presetFocusNodes[3].requestFocus();
+          } else {
+            _startStopFocus.requestFocus();
+          }
+          return KeyEventResult.handled;
+        } else if (focusNode == _emailFocus) {
+          if (!_isVpnActive) {
+            _presetFocusNodes[4].requestFocus();
+          } else {
+            _autoStartFocus.requestFocus();
+          }
+          return KeyEventResult.handled;
+        }
+        // Wrap from top controls to bottom
+        else if (focusNode == _startStopFocus || focusNode == _autoStartFocus) {
+          _facebookFocus.requestFocus();
+          return KeyEventResult.handled;
+        }
+      }
+
+      // Handle back button (for Android TV remotes)
+      if (event.logicalKey == LogicalKeyboardKey.escape ||
+          event.logicalKey == LogicalKeyboardKey.backspace) {
+        // Smart back navigation - go to most logical previous element
+        if (focusNode == _emailFocus || focusNode == _facebookFocus) {
+          if (!_isVpnActive) {
+            _presetFocusNodes[3].requestFocus(); // Go back to presets
+          } else {
+            _autoStartFocus.requestFocus(); // Go back to settings
+          }
+          return KeyEventResult.handled;
+        } else if (_presetFocusNodes.contains(focusNode)) {
+          _startStopFocus.requestFocus(); // Go back to main control
+          return KeyEventResult.handled;
+        } else if (focusNode == _autoStartFocus) {
+          _startStopFocus.requestFocus(); // Go back to main control
+          return KeyEventResult.handled;
+        }
+      }
+
+      // Handle menu button (for quick access to settings)
+      if (event.logicalKey == LogicalKeyboardKey.contextMenu ||
+          event.logicalKey == LogicalKeyboardKey.f1) {
+        _autoStartFocus.requestFocus(); // Jump to settings
+        return KeyEventResult.handled;
+      }
+
+      // Handle home button (go to start)
+      if (event.logicalKey == LogicalKeyboardKey.home ||
+          event.logicalKey == LogicalKeyboardKey.f2) {
+        _startStopFocus.requestFocus(); // Jump to start button
+        return KeyEventResult.handled;
       }
     }
     return KeyEventResult.ignored;
@@ -382,11 +517,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                 color: _isVpnActive ? Colors.green.shade100 : Colors.red.shade100,
                                 borderRadius: BorderRadius.circular(isTV ? 8 : 6),
                                 border: Border.all(
-                                    color: _startStopFocus.hasFocus ? Colors.yellow.shade600 :
+                                    color: _startStopFocus.hasFocus ? Colors.yellow.shade400 :
                                            (_isVpnActive ? Colors.green : Colors.red),
-                                    width: _startStopFocus.hasFocus ? 5 : 2,
+                                    width: _startStopFocus.hasFocus ? 6 : 2,
                                   ),
                                 boxShadow: [
+                                  if (_startStopFocus.hasFocus) 
+                                    BoxShadow(
+                                      color: Colors.yellow.shade400.withOpacity(0.6),
+                                      blurRadius: 12,
+                                      spreadRadius: 2,
+                                      offset: Offset(0, 0),
+                                    ),
                                   BoxShadow(
                                     color: (_isVpnActive ? Colors.green : Colors.red).withOpacity(0.3),
                                     blurRadius: 6,
@@ -550,9 +692,17 @@ class _HomeScreenState extends State<HomeScreen> {
                                         decoration: BoxDecoration(
                                           borderRadius: BorderRadius.circular(20),
                                           border: _autoStartFocus.hasFocus ? Border.all(
-                                            color: Colors.yellow.shade600,
-                                            width: 3,
+                                            color: Colors.yellow.shade400,
+                                            width: 4,
                                           ) : null,
+                                          boxShadow: _autoStartFocus.hasFocus ? [
+                                            BoxShadow(
+                                              color: Colors.yellow.shade400.withOpacity(0.5),
+                                              blurRadius: 8,
+                                              spreadRadius: 1,
+                                              offset: Offset(0, 0),
+                                            ),
+                                          ] : null,
                                         ),
                                         child: Switch(
                                           value: _autoStartEnabled,
@@ -685,9 +835,17 @@ class _HomeScreenState extends State<HomeScreen> {
                                     color: Color(0xFF1877F2), // Facebook blue
                                     borderRadius: BorderRadius.circular(isTV ? 8 : 6),
                                     border: _facebookFocus.hasFocus ? Border.all(
-                                      color: Colors.yellow.shade600,
-                                      width: 3,
+                                      color: Colors.yellow.shade400,
+                                      width: 4,
                                     ) : null,
+                                    boxShadow: _facebookFocus.hasFocus ? [
+                                      BoxShadow(
+                                        color: Colors.yellow.shade400.withOpacity(0.5),
+                                        blurRadius: 8,
+                                        spreadRadius: 1,
+                                        offset: Offset(0, 0),
+                                      ),
+                                    ] : null,
                                   ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
@@ -729,9 +887,17 @@ class _HomeScreenState extends State<HomeScreen> {
                                     color: Color(0xFF34495E), // Dark gray for email
                                     borderRadius: BorderRadius.circular(isTV ? 8 : 6),
                                     border: _emailFocus.hasFocus ? Border.all(
-                                      color: Colors.yellow.shade600,
-                                      width: 3,
+                                      color: Colors.yellow.shade400,
+                                      width: 4,
                                     ) : null,
+                                    boxShadow: _emailFocus.hasFocus ? [
+                                      BoxShadow(
+                                        color: Colors.yellow.shade400.withOpacity(0.5),
+                                        blurRadius: 8,
+                                        spreadRadius: 1,
+                                        offset: Offset(0, 0),
+                                      ),
+                                    ] : null,
                                   ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
@@ -851,8 +1017,8 @@ class _HomeScreenState extends State<HomeScreen> {
           borderRadius: BorderRadius.circular(isTV ? 6 : (isCompact ? 3 : 4)),
         ),
         side: focusNode?.hasFocus == true ? BorderSide(
-          color: Colors.yellow.shade600,
-          width: 3,
+          color: Colors.yellow.shade400,
+          width: 4,
         ) : null,
         backgroundColor: isTV ? Colors.grey.shade800 : Colors.white,
         foregroundColor: isTV ? Colors.white : Colors.black87,
@@ -879,10 +1045,25 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     if (focusNode != null) {
-      return Focus(
-        focusNode: focusNode,
-        onKeyEvent: (node, event) => _handleKeyEvent(node, event),
-        child: button,
+      return AnimatedContainer(
+        duration: Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+        decoration: focusNode.hasFocus ? BoxDecoration(
+          borderRadius: BorderRadius.circular(isTV ? 8 : 6),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.yellow.shade400.withOpacity(0.4),
+              blurRadius: 8,
+              spreadRadius: 1,
+              offset: Offset(0, 0),
+            ),
+          ],
+        ) : null,
+        child: Focus(
+          focusNode: focusNode,
+          onKeyEvent: (node, event) => _handleKeyEvent(node, event),
+          child: button,
+        ),
       );
     }
 
