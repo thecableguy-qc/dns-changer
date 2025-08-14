@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'l10n/app_localizations.dart';
 
@@ -40,7 +41,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   static const platform = MethodChannel('vpn_channel');
 
   final TextEditingController _dns1Controller = TextEditingController(text: '8.8.8.8');
@@ -56,10 +57,32 @@ class _HomeScreenState extends State<HomeScreen> {
   final FocusNode _facebookFocus = FocusNode();
   final FocusNode _emailFocus = FocusNode();
 
+  bool _isLoadingState = false; // Flag to prevent saves during state loading
+  String _lastSavedDns1 = '';
+  String _lastSavedDns2 = '';
+  DateTime? _lastSaveTime;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this); // Add lifecycle observer
+    
     _loadAppVersion();
+    _loadPersistentState(); // Load all persistent application state
+
+    // Add listeners to DNS controllers to auto-save when changed manually
+    _dns1Controller.addListener(() {
+      if (!_isLoadingState && _dns1Controller.text.trim() != _lastSavedDns1) {
+        debugPrint("DNS1 changed to: ${_dns1Controller.text}");
+        _savePersistentState();
+      }
+    });
+    _dns2Controller.addListener(() {
+      if (!_isLoadingState && _dns2Controller.text.trim() != _lastSavedDns2) {
+        debugPrint("DNS2 changed to: ${_dns2Controller.text}");
+        _savePersistentState();
+      }
+    });
 
     // Add listeners to all focus nodes to trigger rebuilds when focus changes
     _startStopFocus.addListener(() => setState(() {}));
@@ -77,6 +100,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this); // Remove lifecycle observer
+    
     _dns1Controller.dispose();
     _dns2Controller.dispose();
     _startStopFocus.dispose();
@@ -88,6 +113,18 @@ class _HomeScreenState extends State<HomeScreen> {
       node.dispose();
     }
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    
+    // Save state when app goes to background or is paused
+    if (state == AppLifecycleState.paused || 
+        state == AppLifecycleState.detached ||
+        state == AppLifecycleState.inactive) {
+      _savePersistentState();
+    }
   }
 
   // Handle key events for D-pad navigation
@@ -115,34 +152,19 @@ class _HomeScreenState extends State<HomeScreen> {
           if (focusNode == _presetFocusNodes[i]) {
             switch (i) {
               case 0: // Google
-                setState(() {
-                  _dns1Controller.text = "8.8.8.8";
-                  _dns2Controller.text = "8.8.4.4";
-                });
+                _applyDnsPreset('Google');
                 break;
               case 1: // Cloudflare
-                setState(() {
-                  _dns1Controller.text = "1.1.1.1";
-                  _dns2Controller.text = "1.0.0.1";
-                });
+                _applyDnsPreset('Cloudflare');
                 break;
               case 2: // Quad9
-                setState(() {
-                  _dns1Controller.text = "9.9.9.10";
-                  _dns2Controller.text = "149.112.112.10";
-                });
+                _applyDnsPreset('Quad9');
                 break;
               case 3: // Cloudflare Blocking
-                setState(() {
-                  _dns1Controller.text = "1.1.1.2";
-                  _dns2Controller.text = "1.0.0.2";
-                });
+                _applyDnsPreset('Cloudflare Blocking');
                 break;
               case 4: // Quad9 Blocking
-                setState(() {
-                  _dns1Controller.text = "9.9.9.9";
-                  _dns2Controller.text = "149.112.112.112";
-                });
+                _applyDnsPreset('Quad9 Blocking');
                 break;
             }
             return KeyEventResult.handled;
@@ -340,6 +362,284 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // Load all persistent application state
+  Future<void> _loadPersistentState() async {
+    debugPrint("=== Starting to load persistent state ===");
+    try {
+      _isLoadingState = true; // Prevent saves during loading
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Load DNS settings first
+      final savedDns1 = prefs.getString('dns1') ?? '8.8.8.8';
+      final savedDns2 = prefs.getString('dns2') ?? '8.8.4.4';
+      final lastPreset = prefs.getString('lastPreset');
+      
+      debugPrint("Raw stored values - DNS1: $savedDns1, DNS2: $savedDns2");
+      debugPrint("Last preset: ${lastPreset ?? 'none'}");
+      
+      setState(() {
+        // Apply saved DNS values
+        _dns1Controller.text = savedDns1;
+        _dns2Controller.text = savedDns2;
+      });
+      
+      debugPrint("Applied to controllers - DNS1: ${_dns1Controller.text}, DNS2: ${_dns2Controller.text}");
+
+      // Update tracking variables
+      _lastSavedDns1 = savedDns1;
+      _lastSavedDns2 = savedDns2;
+
+      // Clean up any legacy duplicate DNS storage
+      await prefs.remove('activeVpnDns1');
+      await prefs.remove('activeVpnDns2');
+      debugPrint("Cleaned up duplicate DNS storage");
+
+      // Check if VPN was previously active and restore it automatically
+      final wasVpnActive = prefs.getBool('wasVpnActive') ?? false;
+      if (wasVpnActive && mounted) {
+        // DNS settings are already loaded above - no need for duplicate values
+        // The current DNS settings are the ones that were used for VPN
+        
+        // Automatically restore VPN connection after a short delay
+        // Delay ensures UI is fully initialized
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+          await Future.delayed(const Duration(milliseconds: 500));
+          if (mounted && !_isVpnActive) {
+            debugPrint("Auto-restoring VPN connection at startup");
+            _startVpn();
+            
+            // Show a brief notification about auto-reconnection
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('VPN automatically restored'),
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
+        });
+      }
+      
+    } catch (e) {
+      // If loading fails, use default values
+      debugPrint("Failed to load persistent state: $e");
+    } finally {
+      _isLoadingState = false; // Re-enable saving
+      debugPrint("=== Completed loading persistent state ===");
+    }
+  }
+
+  // Save all persistent application state
+  Future<void> _savePersistentState() async {
+    if (_isLoadingState) return; // Don't save while loading
+    
+    // Debounce saves - don't save more than once per second
+    final now = DateTime.now();
+    if (_lastSaveTime != null && now.difference(_lastSaveTime!).inMilliseconds < 1000) {
+      debugPrint("Save debounced - too frequent");
+      return;
+    }
+    
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Save DNS settings (only one set needed)
+      final dns1 = _dns1Controller.text.trim();
+      final dns2 = _dns2Controller.text.trim();
+      
+      bool dnsChanged = (dns1 != _lastSavedDns1 || dns2 != _lastSavedDns2);
+      
+      await prefs.setString('dns1', dns1);
+      await prefs.setString('dns2', dns2);
+      
+      if (dnsChanged) {
+        debugPrint("Saved DNS values: DNS1=$dns1, DNS2=$dns2");
+        // Update tracking variables
+        _lastSavedDns1 = dns1;
+        _lastSavedDns2 = dns2;
+      }
+      
+      _lastSaveTime = now;
+      
+      // Save VPN connection state
+      await prefs.setBool('isVpnActive', _isVpnActive);
+      await prefs.setBool('wasVpnActive', _isVpnActive);
+      
+      // Save VPN session details when active
+      if (_isVpnActive) {
+        // Only set start timestamp if it doesn't already exist (first connection in this session)
+        if (!prefs.containsKey('vpnStartTimestamp')) {
+          await prefs.setInt('vpnStartTimestamp', DateTime.now().millisecondsSinceEpoch);
+        }
+        await prefs.setInt('vpnSessionId', DateTime.now().millisecondsSinceEpoch); // Unique session ID
+      } else {
+        // Clear VPN session data when disconnected
+        await prefs.remove('vpnStartTimestamp'); // Clear start timestamp when stopping
+        await prefs.setInt('vpnStopTimestamp', DateTime.now().millisecondsSinceEpoch);
+      }
+      
+      // Save timestamp of last state save
+      await prefs.setInt('lastSaveTimestamp', DateTime.now().millisecondsSinceEpoch);
+      
+    } catch (e) {
+      debugPrint("Failed to save persistent state: $e");
+    }
+  }
+
+  // Save the last used DNS preset
+  Future<void> _saveLastPreset(String presetName) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('lastPreset', presetName);
+    } catch (e) {
+      debugPrint("Failed to save last preset: $e");
+    }
+  }
+
+  // Clear all persistent state (useful for reset/debugging)
+  Future<void> _clearPersistentState() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+      debugPrint("All persistent state cleared");
+    } catch (e) {
+      debugPrint("Failed to clear persistent state: $e");
+    }
+  }
+
+  // Get persistent state info for debugging
+  Future<Map<String, dynamic>> _getPersistentStateInfo() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return {
+        'dns1': prefs.getString('dns1') ?? 'not set',
+        'dns2': prefs.getString('dns2') ?? 'not set',
+        'lastPreset': prefs.getString('lastPreset') ?? 'not set',
+        'isVpnActive': prefs.getBool('isVpnActive') ?? false,
+        'wasVpnActive': prefs.getBool('wasVpnActive') ?? false,
+        'vpnStartTimestamp': prefs.getInt('vpnStartTimestamp') ?? 0,
+        'vpnStopTimestamp': prefs.getInt('vpnStopTimestamp') ?? 0,
+        'vpnSessionId': prefs.getInt('vpnSessionId') ?? 0,
+        'vpnConnectionCount': prefs.getInt('vpnConnectionCount') ?? 0,
+        'lastSaveTimestamp': prefs.getInt('lastSaveTimestamp') ?? 0,
+      };
+    } catch (e) {
+      debugPrint("Failed to get persistent state info: $e");
+      return {};
+    }
+  }
+
+  // Show debug information about persistent state (for development)
+  void _showPersistentStateDebugInfo() async {
+    final stateInfo = await _getPersistentStateInfo();
+    final timestamp = stateInfo['lastSaveTimestamp'] as int;
+    final lastSaveTime = timestamp > 0 
+        ? DateTime.fromMillisecondsSinceEpoch(timestamp).toString()
+        : 'Never';
+
+    // Format VPN session timestamps
+    final vpnStartTimestamp = stateInfo['vpnStartTimestamp'] as int;
+    final vpnStopTimestamp = stateInfo['vpnStopTimestamp'] as int;
+    final vpnStartTime = vpnStartTimestamp > 0 
+        ? DateTime.fromMillisecondsSinceEpoch(vpnStartTimestamp).toString()
+        : 'Never';
+    final vpnStopTime = vpnStopTimestamp > 0 
+        ? DateTime.fromMillisecondsSinceEpoch(vpnStopTimestamp).toString()
+        : 'Never';
+
+    if (mounted) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Persistent State Debug Info'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('DNS Settings:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text('DNS1: ${stateInfo['dns1']}'),
+                  Text('DNS2: ${stateInfo['dns2']}'),
+                  Text('Last Preset: ${stateInfo['lastPreset']}'),
+                  const SizedBox(height: 10),
+                  const Text('VPN State:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text('Currently Active: ${stateInfo['isVpnActive']}'),
+                  Text('Was Active: ${stateInfo['wasVpnActive']}'),
+                  const SizedBox(height: 10),
+                  const Text('VPN Sessions:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text('Connection Count: ${stateInfo['vpnConnectionCount']}'),
+                  Text('Session ID: ${stateInfo['vpnSessionId']}'),
+                  Text('Last Start: $vpnStartTime'),
+                  Text('Last Stop: $vpnStopTime'),
+                  const SizedBox(height: 10),
+                  const Text('System:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text('Last Save: $lastSaveTime'),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Close'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _clearPersistentState();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Persistent state cleared!')),
+                  );
+                },
+                child: const Text('Clear State'),
+              ),
+            ],
+          );
+        },
+      );
+    }
+  }
+
+  // Apply DNS preset and remember selection
+  void _applyDnsPreset(String preset, {bool saveState = true}) {
+    final oldLoadingState = _isLoadingState;
+    if (!saveState) {
+      _isLoadingState = true; // Temporarily disable saving if requested
+    }
+    
+    setState(() {
+      switch (preset) {
+        case 'Google':
+          _dns1Controller.text = '8.8.8.8';
+          _dns2Controller.text = '8.8.4.4';
+          break;
+        case 'Cloudflare':
+          _dns1Controller.text = '1.1.1.1';
+          _dns2Controller.text = '1.0.0.1';
+          break;
+        case 'Quad9':
+          _dns1Controller.text = '9.9.9.10';
+          _dns2Controller.text = '149.112.112.10';
+          break;
+        case 'Cloudflare Blocking':
+          _dns1Controller.text = '1.1.1.2';
+          _dns2Controller.text = '1.0.0.2';
+          break;
+        case 'Quad9 Blocking':
+          _dns1Controller.text = '9.9.9.9';
+          _dns2Controller.text = '149.112.112.112';
+          break;
+      }
+    });
+    
+    _isLoadingState = oldLoadingState; // Restore original loading state
+    
+    if (saveState) {
+      // Save the preset choice and DNS values immediately
+      _saveLastPreset(preset);
+      _savePersistentState();
+    }
+  }
+
   Future<void> _launchUrl(String url) async {
     final uri = Uri.parse(url);
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
@@ -364,6 +664,19 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _isVpnActive = true;
       });
+      
+      // Increment connection count for this new connection
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final connectionCount = prefs.getInt('vpnConnectionCount') ?? 0;
+        await prefs.setInt('vpnConnectionCount', connectionCount + 1);
+      } catch (e) {
+        debugPrint("Failed to increment connection count: $e");
+      }
+      
+      // Save the current state after successful VPN start
+      _savePersistentState();
+      
     } catch (e) {
       debugPrint("Flutter: Failed to start VPN: $e");
       if (mounted) {
@@ -382,6 +695,10 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _isVpnActive = false;
       });
+      
+      // Save the current state after successful VPN stop
+      _savePersistentState();
+      
     } catch (e) {
       debugPrint("Flutter: Failed to stop VPN: $e");
       if (mounted) {
@@ -694,13 +1011,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     child: Column(
                       children: [
-                        // App Version
-                        Text(
-                          'Version $_appVersion',
-                          style: TextStyle(
-                            fontSize: isTV ? 12 : (isCompact ? 10 : 11),
-                            color: isTV ? Colors.white70 : Colors.grey.shade600,
-                            fontWeight: FontWeight.w500,
+                        // App Version (with long press for debug info)
+                        GestureDetector(
+                          onLongPress: _showPersistentStateDebugInfo,
+                          child: Text(
+                            'Version $_appVersion',
+                            style: TextStyle(
+                              fontSize: isTV ? 12 : (isCompact ? 10 : 11),
+                              color: isTV ? Colors.white70 : Colors.grey.shade600,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                         SizedBox(height: isTV ? 12 : (isCompact ? 6 : 8)),
@@ -861,6 +1181,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return TextField(
       controller: controller,
       enabled: enabled,
+      // Removed onEditingComplete - controller listeners already handle saving
       style: TextStyle(
         fontSize: isTV ? 12 : (isCompact ? 10 : 11),
         color: isTV ? Colors.white : null,
