@@ -179,7 +179,7 @@ class _HomeScreenState extends State<HomeScreen> {
           // Wrap around to Facebook
           _facebookFocus.requestFocus();
           return KeyEventResult.handled;
-        } 
+        }
         // Preset buttons navigation (top row)
         else if (focusNode == _presetFocusNodes[0]) {
           _presetFocusNodes[1].requestFocus();
@@ -255,7 +255,7 @@ class _HomeScreenState extends State<HomeScreen> {
             _emailFocus.requestFocus();
           }
           return KeyEventResult.handled;
-        } 
+        }
         // Top row presets to bottom row presets
         else if (focusNode == _presetFocusNodes[0]) {
           // Google has no direct match below, go to first available bottom preset
@@ -522,7 +522,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     width: _startStopFocus.hasFocus ? 6 : 2,
                                   ),
                                 boxShadow: [
-                                  if (_startStopFocus.hasFocus) 
+                                  if (_startStopFocus.hasFocus)
                                     BoxShadow(
                                       color: Colors.yellow.shade400.withOpacity(0.6),
                                       blurRadius: 12,
