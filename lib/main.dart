@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'l10n/app_localizations.dart';
 
 void main() {
@@ -48,13 +47,11 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _dns2Controller = TextEditingController(text: '8.8.4.4');
   bool _isVpnActive = false;
   String _appVersion = '';
-  bool _autoStartEnabled = false;
 
   // Focus nodes for D-pad navigation
   final FocusNode _startStopFocus = FocusNode();
   final FocusNode _dns1Focus = FocusNode();
   final FocusNode _dns2Focus = FocusNode();
-  final FocusNode _autoStartFocus = FocusNode();
   final List<FocusNode> _presetFocusNodes = List.generate(5, (_) => FocusNode());
   final FocusNode _facebookFocus = FocusNode();
   final FocusNode _emailFocus = FocusNode();
@@ -63,11 +60,9 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadAppVersion();
-    _loadAutoStartSetting();
 
     // Add listeners to all focus nodes to trigger rebuilds when focus changes
     _startStopFocus.addListener(() => setState(() {}));
-    _autoStartFocus.addListener(() => setState(() {}));
     _facebookFocus.addListener(() => setState(() {}));
     _emailFocus.addListener(() => setState(() {}));
     for (final node in _presetFocusNodes) {
@@ -87,7 +82,6 @@ class _HomeScreenState extends State<HomeScreen> {
     _startStopFocus.dispose();
     _dns1Focus.dispose();
     _dns2Focus.dispose();
-    _autoStartFocus.dispose();
     _facebookFocus.dispose();
     _emailFocus.dispose();
     for (final node in _presetFocusNodes) {
@@ -107,9 +101,6 @@ class _HomeScreenState extends State<HomeScreen> {
           } else {
             _startVpn();
           }
-          return KeyEventResult.handled;
-        } else if (focusNode == _autoStartFocus) {
-          _setAutoStart(!_autoStartEnabled);
           return KeyEventResult.handled;
         } else if (focusNode == _facebookFocus) {
           _launchUrl('https://www.facebook.com/share/169oPW4Sxq/');
@@ -162,13 +153,8 @@ class _HomeScreenState extends State<HomeScreen> {
       // Handle directional navigation with circular/wrap-around support
       if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
         if (focusNode == _startStopFocus) {
-          _autoStartFocus.requestFocus();
-          return KeyEventResult.handled;
-        } else if (focusNode == _autoStartFocus) {
-          // When VPN is active, wrap back to start, otherwise go to presets
-          if (_isVpnActive) {
-            _startStopFocus.requestFocus();
-          } else {
+          // Go directly to presets when VPN is inactive
+          if (!_isVpnActive) {
             _presetFocusNodes[0].requestFocus();
           }
           return KeyEventResult.handled;
@@ -188,8 +174,8 @@ class _HomeScreenState extends State<HomeScreen> {
           _presetFocusNodes[2].requestFocus();
           return KeyEventResult.handled;
         } else if (focusNode == _presetFocusNodes[2]) {
-          // Wrap to first preset or go to auto-start if more logical
-          _autoStartFocus.requestFocus();
+          // Wrap to first preset in the row
+          _presetFocusNodes[0].requestFocus();
           return KeyEventResult.handled;
         }
         // Preset buttons navigation (bottom row)
@@ -202,14 +188,7 @@ class _HomeScreenState extends State<HomeScreen> {
           return KeyEventResult.handled;
         }
       } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-        if (focusNode == _autoStartFocus) {
-          _startStopFocus.requestFocus();
-          return KeyEventResult.handled;
-        } else if (focusNode == _startStopFocus) {
-          // Wrap around to auto-start
-          _autoStartFocus.requestFocus();
-          return KeyEventResult.handled;
-        } else if (focusNode == _emailFocus) {
+        if (focusNode == _emailFocus) {
           _facebookFocus.requestFocus();
           return KeyEventResult.handled;
         } else if (focusNode == _facebookFocus) {
@@ -247,14 +226,6 @@ class _HomeScreenState extends State<HomeScreen> {
             _facebookFocus.requestFocus();
           }
           return KeyEventResult.handled;
-        } else if (focusNode == _autoStartFocus) {
-          if (!_isVpnActive) {
-            _presetFocusNodes[2].requestFocus();
-          } else {
-            // When VPN is active, go to contacts
-            _emailFocus.requestFocus();
-          }
-          return KeyEventResult.handled;
         }
         // Top row presets to bottom row presets
         else if (focusNode == _presetFocusNodes[0]) {
@@ -285,11 +256,8 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
         // Top controls
-        if (focusNode == _presetFocusNodes[0] || focusNode == _presetFocusNodes[1]) {
+        if (focusNode == _presetFocusNodes[0] || focusNode == _presetFocusNodes[1] || focusNode == _presetFocusNodes[2]) {
           _startStopFocus.requestFocus();
-          return KeyEventResult.handled;
-        } else if (focusNode == _presetFocusNodes[2]) {
-          _autoStartFocus.requestFocus();
           return KeyEventResult.handled;
         }
         // Bottom row presets to top row presets
@@ -314,12 +282,12 @@ class _HomeScreenState extends State<HomeScreen> {
           if (!_isVpnActive) {
             _presetFocusNodes[4].requestFocus();
           } else {
-            _autoStartFocus.requestFocus();
+            _startStopFocus.requestFocus();
           }
           return KeyEventResult.handled;
         }
         // Wrap from top controls to bottom
-        else if (focusNode == _startStopFocus || focusNode == _autoStartFocus) {
+        else if (focusNode == _startStopFocus) {
           _facebookFocus.requestFocus();
           return KeyEventResult.handled;
         }
@@ -333,22 +301,19 @@ class _HomeScreenState extends State<HomeScreen> {
           if (!_isVpnActive) {
             _presetFocusNodes[3].requestFocus(); // Go back to presets
           } else {
-            _autoStartFocus.requestFocus(); // Go back to settings
+            _startStopFocus.requestFocus(); // Go back to main control
           }
           return KeyEventResult.handled;
         } else if (_presetFocusNodes.contains(focusNode)) {
           _startStopFocus.requestFocus(); // Go back to main control
           return KeyEventResult.handled;
-        } else if (focusNode == _autoStartFocus) {
-          _startStopFocus.requestFocus(); // Go back to main control
-          return KeyEventResult.handled;
         }
       }
 
-      // Handle menu button (for quick access to settings)
+      // Handle menu button (for quick access to main control)
       if (event.logicalKey == LogicalKeyboardKey.contextMenu ||
           event.logicalKey == LogicalKeyboardKey.f1) {
-        _autoStartFocus.requestFocus(); // Jump to settings
+        _startStopFocus.requestFocus(); // Jump to main control
         return KeyEventResult.handled;
       }
 
@@ -372,37 +337,6 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _appVersion = '1.0.0+1'; // Fallback version
       });
-    }
-  }
-
-  Future<void> _loadAutoStartSetting() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      setState(() {
-        _autoStartEnabled = prefs.getBool('autoStart') ?? false;
-      });
-    } catch (e) {
-      // Handle error silently
-    }
-  }
-
-  Future<void> _setAutoStart(bool enabled) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('autoStart', enabled);
-
-      // Call platform method to enable/disable auto-start
-      await platform.invokeMethod('setAutoStart', {'enabled': enabled});
-
-      setState(() {
-        _autoStartEnabled = enabled;
-      });
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update auto-start setting: $e')),
-        );
-      }
     }
   }
 
@@ -669,50 +603,17 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ),
                               SizedBox(height: isTV ? 16 : (isCompact ? 8 : 12)),
-
-                              // Auto-start toggle
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      AppLocalizations.of(context)!.autoStart,
-                                      style: TextStyle(
-                                        fontSize: isTV ? 10 : (isCompact ? 8 : 9),
-                                        color: isTV ? Colors.white70 : Colors.black87,
-                                      ),
-                                    ),
+                              
+                              // Settings section is now empty but preserved for future use
+                              Center(
+                                child: Text(
+                                  'No additional settings available',
+                                  style: TextStyle(
+                                    fontSize: isTV ? 10 : (isCompact ? 8 : 9),
+                                    color: isTV ? Colors.white54 : Colors.black54,
+                                    fontStyle: FontStyle.italic,
                                   ),
-                                  Transform.scale(
-                                    scale: isTV ? 0.8 : (isCompact ? 0.7 : 0.8),
-                                    child: Focus(
-                                      focusNode: _autoStartFocus,
-                                      onKeyEvent: (node, event) => _handleKeyEvent(node, event),
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(20),
-                                          border: _autoStartFocus.hasFocus ? Border.all(
-                                            color: Colors.yellow.shade400,
-                                            width: 4,
-                                          ) : null,
-                                          boxShadow: _autoStartFocus.hasFocus ? [
-                                            BoxShadow(
-                                              color: Colors.yellow.shade400.withOpacity(0.5),
-                                              blurRadius: 8,
-                                              spreadRadius: 1,
-                                              offset: Offset(0, 0),
-                                            ),
-                                          ] : null,
-                                        ),
-                                        child: Switch(
-                                          value: _autoStartEnabled,
-                                          onChanged: _setAutoStart,
-                                          activeColor: Colors.blue,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                                ),
                               ),
                             ],
                           ),
